@@ -559,6 +559,9 @@ function loadData() {
   dataText += "</TD></TR>"
   dataText += "</TABLE>"
   printTo('data_area',dataText)
+
+  $("#classCalc").show();
+
 }
  
 //由圖鑑編號判斷一級每檔BP
@@ -2018,7 +2021,7 @@ function ranFindBest() {
 }
 
 function filterPet(name){
-  
+  name = $.trim(name);  
   $("[name=raceMenu]")[0].selectedIndex =0 ;
   $("[name=raceMenu]").change();
 
