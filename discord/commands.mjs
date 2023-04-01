@@ -53,18 +53,27 @@ const pingCommand = {
             // console.log(tokens);
 
             let lvl = 0;
+            let params = [];
+
             if (tokens.length == 6) {
                 lvl = 1;
+                params = [
+                    parseInt(tokens[1], 10),
+                    parseInt(tokens[2], 10),
+                    parseInt(tokens[3], 10),
+                    parseInt(tokens[4], 10),
+                    parseInt(tokens[5], 10),
+                ];
             } else {
                 lvl = parseInt(tokens[1]);
+                params = [
+                    parseInt(tokens[2], 10),
+                    parseInt(tokens[3], 10),
+                    parseInt(tokens[4], 10),
+                    parseInt(tokens[5], 10),
+                    parseInt(tokens[6], 10),
+                ];
             }
-            const params = [
-                parseInt(tokens[2], 10),
-                parseInt(tokens[3], 10),
-                parseInt(tokens[4], 10),
-                parseInt(tokens[5], 10),
-                parseInt(tokens[6], 10),
-            ];
 
             const results = RealGuess(tokens[0],
                 lvl, ...params);
