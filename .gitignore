@@ -1,0 +1,7 @@
+config.json
+data.json
+calcpet/pts.json
+calcpet/mergedpets.json
+discord/log
+node_modules
+.idea
