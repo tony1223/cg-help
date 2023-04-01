@@ -12,7 +12,10 @@ const config = JSON.parse(
 // Discord.js versions ^13.0 require us to explicitly define client intents
 import {Client, GatewayIntentBits, SlashCommandBuilder, Collection, Events} from 'discord.js';
 
-const client = new Client({intents: [GatewayIntentBits.Guilds]});
+const client = new Client({
+    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent]
+});
 
 client.once('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`);
@@ -29,7 +32,6 @@ client.commands = new Collection();
 commands.forEach(n => {
     client.commands.set(n.data.name, n);
 });
-
 
 client.on(Events.InteractionCreate, async interaction => {
     if (!interaction.isChatInputCommand()) return;
