@@ -13,8 +13,7 @@ const config = JSON.parse(
 import {Client, GatewayIntentBits, SlashCommandBuilder, Collection, Events} from 'discord.js';
 
 const client = new Client({
-    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent]
+    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages]
 });
 
 client.once('ready', () => {
