@@ -112,7 +112,8 @@ const PetCalcCommand = {
                 "\r\n" + JSON.stringify(logResult), 'utf8'
             )
 
-            await interaction.reply(out.join("\n"));
+            await interaction.reply({content: out.join("\n"), ephemeral: true});
+            // await interaction.reply(out.join("\n"));
         }
     }
 ;

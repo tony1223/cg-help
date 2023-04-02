@@ -266,10 +266,10 @@ function RealGuess(name, lvl, hp, mp, attack, def, agi) {
         return {pet: null};
     }
 
-    console.log("Hello", pet);
+    // console.log("Hello", pet);
 
     const bps = [pet[3], pet[4], pet[5], pet[6], pet[7]];
-    console.log(bps);
+    // console.log(bps);
     try {
         const rng = new GrowRange(...bps, bprate);
 
