@@ -173,13 +173,13 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ }),
 
-/***/ 517:
+/***/ 5372:
 /***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
 
-Promise.resolve(/* import() eager */).then(__webpack_require__.t.bind(__webpack_require__, 8950, 23));
 Promise.resolve(/* import() eager */).then(__webpack_require__.t.bind(__webpack_require__, 5958, 23));
-Promise.resolve(/* import() eager */).then(__webpack_require__.t.bind(__webpack_require__, 1551, 23));
-Promise.resolve(/* import() eager */).then(__webpack_require__.t.bind(__webpack_require__, 2513, 23))
+Promise.resolve(/* import() eager */).then(__webpack_require__.t.bind(__webpack_require__, 8950, 23));
+Promise.resolve(/* import() eager */).then(__webpack_require__.t.bind(__webpack_require__, 2513, 23));
+Promise.resolve(/* import() eager */).then(__webpack_require__.t.bind(__webpack_require__, 1551, 23))
 
 /***/ }),
 
@@ -8138,7 +8138,7 @@ function testcase1() {
     }
 }
 function RealGuessRaw(input) {
-    const token = input.split(/ /);
+    const token = input.trim().split(/ /);
     return RealGuess(token[0], ...token.slice(1).map((n)=>parseInt(n)));
 }
 function RealGuess(name, lvl, hp, mp, attack, def, agi) {
@@ -8258,21 +8258,20 @@ function Home() {
     };
     (0,react_.useEffect)(()=>{
         if (location.hash != "") {
-            setInputProps(decodeURIComponent(location.hash.substring(1)));
-            _calcProps();
+            const val = decodeURIComponent(location.hash.substring(1));
+            setInputProps(val);
+            _calcProps(val);
         } else {
             setInputProps("小蝙蝠 20 377 467 170 94 106");
         }
-    }, [
-        inputProps
-    ]);
+    }, []);
     const calcProps = ()=>{
         location.hash = inputProps;
         _calcProps();
     };
-    const _calcProps = ()=>{
+    const _calcProps = (val)=>{
         // console.log(inputProps);/
-        const results = RealGuessRaw(inputProps);
+        const results = RealGuessRaw(val || inputProps);
         if (!results.pet.find) {
             setResult("寵物名稱 [" + results.pet.name + "] 查無符合寵物.");
             return true;
