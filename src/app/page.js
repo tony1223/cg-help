@@ -54,20 +54,21 @@ export default function Home() {
 
     useEffect(() => {
         if (location.hash != "") {
-            setInputProps(decodeURIComponent(location.hash.substring(1)));
-            _calcProps();
+            const val = decodeURIComponent(location.hash.substring(1));
+            setInputProps(val);
+            _calcProps(val)
         } else {
             setInputProps('小蝙蝠 20 377 467 170 94 106');
         }
-    }, [inputProps]);
+    }, []);
     const calcProps = () => {
         location.hash = (inputProps);
         _calcProps();
     }
 
-    const _calcProps = () => {
+    const _calcProps = (val) => {
         // console.log(inputProps);/
-        const results = RealGuessRaw(inputProps);
+        const results = RealGuessRaw(val || inputProps);
 
 
         if (!results.pet.find) {

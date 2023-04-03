@@ -548,7 +548,7 @@ function testcase1() {
 
 
 function RealGuessRaw(input) {
-    const token = input.split(/ /);
+    const token = input.trim().split(/ /);
     return RealGuess(token[0], ...token.slice(1).map(n => parseInt(n)));
 }
 
