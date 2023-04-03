@@ -1,5 +1,5 @@
 import {SlashCommandBuilder} from "discord.js";
-import {RealGuess} from "../../calcpet/Pets.mjs"
+import {RealGuess, calcDiff, minmax} from "../../calcpet/Pets.mjs"
 import fs from "fs";
 ///掉檔 紅色口臭鬼 1  122  102  36 33  28
 const PetCalcCommand = {
@@ -93,20 +93,80 @@ const PetCalcCommand = {
 
             out.push("寵物名稱:" + results.pet.name)
             // out.push("寵物總檔次", results.bps.join(","))
-            out.push("===計算結果===");
-            if (results.results.length == 0) {
-                out.push("無解")
-            }
-            for (var r of results.results) {
-                out.push("* 掉檔:" + r.LostBP, ["至少掉檔", r.PossibleLost.sureLost.join(",")]);
-                // out.push(r.guess.str());
-                // out.push(["可能檔次", r.GuessBPs.join(","), r.LostBP, r.SumGrowBPs].join(","));
-                // out.push(["穩掉", r.PossibleLost.sumSureLost, "分布", r.PossibleLost.sureLost.join(",")].join(","));
-                // console.log("基本檔穩超過", r.PossibleLost.sumSureBase, "分布", r.PossibleLost.sureBaseOver);
-                out.push(["可能掉檔分布", r.PossibleLost.possibleLostRange.join(",")].join(","));
-            }
-            // interaction.options.console.log(interaction)
 
+            const petGrowRanges = results.bps;
+            const limit = 10;
+            const showDetails = 100;
+            if (results.results.length > limit) {
+                if (results.results.length > showDetails) {
+                    out.push("===計算結果===(共有 " + (results.results.length - limit) + " 個結果，超過 " + showDetails + "個組合，不顯示詳細結果), 分布是 血 攻 防 敏 魔 順序");
+                } else {
+                    out.push("===計算結果===(只列出 " + limit + " 個結果, 共有: " + (results.results.length) + " 個可能解), 分布是 血 攻 防 敏 魔 順序");
+                }
+            } else {
+                out.push("===計算結果===(所有), 分布是 血 攻 防 敏 魔 順序");
+            }
+
+            let _results = results.results;
+            if (lvl != 1) {
+                _results = _results.sort((n, n2) => {
+                    let cp1 = n.ManualPoints.filter(n => n == 0).length;
+                    let cp2 = n2.ManualPoints.filter(n => n == 0).length;
+
+                    if (cp1 != cp2) {
+                        return cp2 - cp1;
+                    }
+
+                    let diffMX1 = minmax(n.ManualPoints);
+                    let diffMX2 = minmax(n2.ManualPoints);
+                    let diff1 = diffMX1.length == 1 ? diffMX1[0] : (diffMX1[1] - diffMX1[0]);
+                    let diff2 = diffMX2.length == 1 ? diffMX2[0] : (diffMX2[1] - diffMX2[0]);
+
+                    return diff2 - diff1;
+
+                });
+            }
+
+            if (_results.length) {
+                const lostBP = minmax(_results.map(n => n.LostBP));
+                const ranges = [
+                    minmax(_results.map(n => petGrowRanges[0] - n.GuessRange.hpp)).join(" ~ "),
+                    minmax(_results.map(n => petGrowRanges[1] - n.GuessRange.attackp)).join(" ~ "),
+                    minmax(_results.map(n => petGrowRanges[2] - n.GuessRange.defendp)).join(" ~ "),
+                    minmax(_results.map(n => petGrowRanges[3] - n.GuessRange.agip)).join(" ~ "),
+                    minmax(_results.map(n => petGrowRanges[4] - n.GuessRange.mpp)).join(" ~ ")
+                ];
+                const fixed = ranges.filter(n => n.indexOf("~") != -1).length == 0;
+                if (fixed) {
+                    out.push("總掉檔: " + lostBP.join(" ~ ") + " , 定檔 : \t" + ranges.join(" , "))
+                } else {
+                    out.push("總掉檔: " + lostBP.join(" ~ ") + " , 掉檔可能解範圍: \t" + ranges.join(" , "))
+                }
+            }
+
+            if (_results.length == 0) {
+                out.push(" 無解 (可以確認是否有未點點數或裝備寵物裝備中) ")
+            }
+
+            if (_results.length < showDetails && _results.length != 0) {
+                out.push("===詳細情形===");
+                _results = _results.slice(0, limit);
+                for (let r of _results) {
+                    if (r.RandomRange) {
+                        if (lvl == 1) {
+                            out.push("* 掉檔:" + r.LostBP + " , " + "本解確定掉檔 " +
+                                calcDiff(r.GuessRange.toArray(), r.MaxGrowBPs).join(", ") + " "
+                                + "\n\t" + ["隨機檔分布\t", r.RandomRange.join(",")].join(", "));
+                        } else {
+                            out.push("* 掉檔:" + r.LostBP + " , " + "本解確定掉檔 " +
+                                calcDiff(r.MaxGrowBPs, r.GuessRange.toArray()).join(", ") + " "
+                                + "\n\t" + ["隨機檔分布\t", r.RandomRange.join(",")].join(", ")
+                                + "\t加點分布\t" + r.ManualPoints.join(", "));
+                        }
+
+                    }
+                }
+            }
             //紀錄資料之後驗算確認用
             fs.appendFileSync("./log/" + today.getFullYear() + "" + today.getMonth() + "" + today.getDate() + ".txt",
                 "\r\n" + JSON.stringify(logResult), 'utf8'
