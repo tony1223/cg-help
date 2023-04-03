@@ -1,5 +1,5 @@
 import {SlashCommandBuilder} from "discord.js";
-import {RealGuess, calcDiff, minmax} from "../../calcpet/Pets.mjs"
+import {RealGuess, calcDiff, minmax} from "../../src/calcpet/Pets.mjs"
 import fs from "fs";
 ///掉檔 紅色口臭鬼 1  122  102  36 33  28
 const PetCalcCommand = {
@@ -12,6 +12,7 @@ const PetCalcCommand = {
                         .setDescription('寵物名稱 <等級(一級可不寫)> 血 魔 攻 防 敏')),
         async execute(interaction) {
 
+            await interaction.deferReply({ephemeral: true});
             const logResult = ({
                 user: {
                     id: interaction.user.id,
@@ -39,7 +40,7 @@ const PetCalcCommand = {
 
             if (!reason) {
                 logResult.error = "No Data";
-                await interaction.reply('沒有輸入任何資訊');
+                await interaction.editReply({content: '沒有輸入任何資訊', ephemeral: true});
 
                 fs.appendFileSync("./log/" + today.getFullYear() + "" + today.getMonth() + "" + today.getDate() + ".txt",
                     "\r\n" + JSON.stringify(logResult), 'utf8'
@@ -79,8 +80,8 @@ const PetCalcCommand = {
 
             logResult.results = results;
 
-            if (results.pet == null) {
-                await interaction.reply('寵物名稱 [' + tokens[0] + "] 查無符合寵物.");
+            if (!results.pet.find) {
+                await interaction.editReply({content: '寵物名稱 [' + tokens[0] + "] 查無符合寵物.", ephemeral: true});
 
                 fs.appendFileSync("./log/" + today.getFullYear() + "" + today.getMonth() + "" + today.getDate() + ".txt",
                     "\r\n" + JSON.stringify(logResult), 'utf8'
@@ -172,7 +173,7 @@ const PetCalcCommand = {
                 "\r\n" + JSON.stringify(logResult), 'utf8'
             )
 
-            await interaction.reply({content: out.join("\n"), ephemeral: true});
+            await interaction.editReply({content: out.join("\n"), ephemeral: true});
             // await interaction.reply(out.join("\n"));
         }
     }
