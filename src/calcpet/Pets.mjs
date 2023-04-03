@@ -440,7 +440,7 @@ class GrowRange {
         const oUpSum = calcUpBp.sum();
 
         const results = [];
-        // this.mockLoopRange(this.drop(1, 0, 3, 0, 0), (sumBP, growRange) => {
+        // this.mockLoopRange(this.drop(4, 0, 4, 1, 1), (sumBP, growRange) => {
         this.loopRange((sumBP, growRange) => {
 
             if (!growRange.contains(this)) {
@@ -448,7 +448,7 @@ class GrowRange {
             }
             const res = growRange.calcBPAtLevel(stat.lvl);
 
-            if ((res.sumFullBP >= oSum && res.sumFullBP <= oUpSum) && res.baseBP.contains(calcUpBp)) {
+            if ((res.sumFullBP >= oSum && res.sumFullBP <= oUpSum)) {
                 const softLimit = calcDiff(res.baseBP.toArray(), calcUpBp.toArray()).map(n => n + 1);
                 loopForSum(stat.lvl - 1, 5, softLimit, (a, b, c, d, e) => {
                     loopForSum(10, 5, [10, 10, 10, 10, 10], (a1, b1, c1, d1, e1) => {
