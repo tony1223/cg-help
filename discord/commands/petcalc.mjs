@@ -1,5 +1,5 @@
 import {SlashCommandBuilder} from "discord.js";
-import {RealGuess, calcDiff, minmax} from "../../calcpet/Pets.mjs"
+import {RealGuess, calcDiff, minmax} from "../../src/calcpet/Pets.mjs"
 import fs from "fs";
 ///掉檔 紅色口臭鬼 1  122  102  36 33  28
 const PetCalcCommand = {
@@ -79,7 +79,7 @@ const PetCalcCommand = {
 
             logResult.results = results;
 
-            if (results.pet == null) {
+            if (!results.pet.find) {
                 await interaction.reply('寵物名稱 [' + tokens[0] + "] 查無符合寵物.");
 
                 fs.appendFileSync("./log/" + today.getFullYear() + "" + today.getMonth() + "" + today.getDate() + ".txt",

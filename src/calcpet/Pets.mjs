@@ -547,11 +547,16 @@ function testcase1() {
 }
 
 
+function RealGuessRaw(input) {
+    const token = input.split(/ /);
+    return RealGuess(token[0], ...token.slice(1).map(n => parseInt(n)));
+}
+
 function RealGuess(name, lvl, hp, mp, attack, def, agi) {
 
     const pet = Pts.filter(n => n[1] == name)[0];
     if (pet == null) {
-        return {pet: null};
+        return {pet: {name: name, find: false, lvl: lvl}};
     }
 
 
@@ -563,7 +568,7 @@ function RealGuess(name, lvl, hp, mp, attack, def, agi) {
         const stat = new Stat(lvl, hp, mp, attack, def, agi);
         const results = rng.guess(stat);
 
-        return {pet: {name: pet[1]}, bps, results};
+        return {pet: {name: pet[1], find: true, lvl: lvl}, bps, results};
     } catch (err) {
         console.log(err);
         throw err;
@@ -591,5 +596,5 @@ function minmax(datas) {
 }
 
 const sumArray = sum;
-export {RealGuess, BP, Stat, GrowRange, sumArray, Pts, calcDiff, minmax};
+export {RealGuess, RealGuessRaw, BP, Stat, GrowRange, sumArray, Pts, calcDiff, minmax};
 

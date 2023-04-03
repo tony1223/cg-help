@@ -1,7 +1,10 @@
 config.json
 data.json
-calcpet/pts.json
-calcpet/mergedpets.json
+src/calcpet/pts.json
+src/calcpet/mergedpets.json
 discord/log
 node_modules
 .idea
+dist/main.js
+.next
+.vscode
