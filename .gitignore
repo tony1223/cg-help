@@ -1,0 +1,6 @@
+.next
+.vscode
+.idea
+node_modules
+config.json
+data.json
