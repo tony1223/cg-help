@@ -347,7 +347,7 @@ class GrowRange {
             + this.agip;
     }
 
-    calcBPAtLevel(lvl) {
+    calcBPAtLevel(lvl, lvlpoint) {
 
         const bps = [
             this.hpp * this.bprate,
@@ -366,10 +366,14 @@ class GrowRange {
         bps[3] = bps[3] + (fullRates[this.agip - shift] * lvldiff);
         bps[4] = bps[4] + (fullRates[this.mpp - shift] * lvldiff);
 
+        if (lvlpoint == null) {
+            lvlpoint = lvldiff;
+        }
+
         return {
             baseBP: new BP(...bps),
             sumBaseBP: sum(bps) + (10 * this.bprate),
-            sumFullBP: sum(bps) + (10 * this.bprate) + lvldiff
+            sumFullBP: sum(bps) + (10 * this.bprate) + lvlpoint
         };
 
     }
@@ -425,10 +429,80 @@ class GrowRange {
     }
 
     guess(stat) {
-        const result = [];
+
+        let res = this.guessWithSpecficLvlPoint(stat, stat.lvl - 1);
+
         // if (stat.lvl == 1) {
         //     return this.guesslv1(stat, bprate);
         // }
+
+        if (res.length == 0 && stat.lvl != 1) {
+            res = this.guessWithSpecficLvlPoint(stat, 0);
+        }
+
+        return res;
+    }
+
+
+    guessWithSpecficLvlPoint(stat, point) {
+        const result = [];
+
+        const calcBP = stat.toBP();
+
+        const statUp = new Stat(stat.lvl, stat.hp + 1, stat.mp + 1, stat.attack + 1,
+            stat.defend + 1, stat.agi + 1);
+        const calcUpBp = statUp.toBP();
+
+        const oSum = calcBP.sum();
+        const oUpSum = calcUpBp.sum();
+
+        const results = [];
+        this.mockLoopRange(this.drop(2, 1, 0, 1, 0), (sumBP, growRange) => {
+            // this.loopRange((sumBP, growRange) => {
+
+            if (!growRange.contains(this)) {
+                return false;
+            }
+            const res = growRange.calcBPAtLevel(stat.lvl, point);
+
+            if ((res.sumFullBP >= oSum && res.sumFullBP <= oUpSum)) {
+                const softLimit = calcDiff(res.baseBP.toArray(), calcUpBp.toArray()).map(n => n + 1);
+                loopForSum(point, 5, softLimit, (a, b, c, d, e) => {
+                    loopForSum(10, 5, [10, 10, 10, 10, 10], (a1, b1, c1, d1, e1) => {
+                        const bps = res.baseBP.toArray();
+                        const bp = new BP(bps[0] + a + growRange.bprate * a1,
+                            bps[1] + b + growRange.bprate * b1,
+                            bps[2] + c + growRange.bprate * c1,
+                            bps[3] + d + growRange.bprate * d1,
+                            bps[4] + e + growRange.bprate * e1,
+                        );
+
+                        const calcState = bp.calcRealNum();
+                        if (calcState.same(stat)) {
+                            results.push({growRange,})
+                            result.push({
+                                SumGrowBPs: sumBP,
+                                MaxGrowBPs: this.bps(),
+                                GuessRange: growRange,
+                                LostBP: growRange.sum() - sumBP,
+                                PossibleLost: possibleLostRange(growRange, this.bps()),
+                                guess: calcState,
+                                ManualPoints: [a, b, c, d, e],
+                                RandomRange: [a1, b1, c1, d1, e1]
+                            });
+                        }
+
+                    })
+                });
+            }
+        })
+
+        return result;
+    }
+
+
+    guessWithFullPoint(stat) {
+        const result = [];
 
         const calcBP = stat.toBP();
 
@@ -483,6 +557,95 @@ class GrowRange {
         return result;
     }
 
+}
+
+function GuessResultToString(results) {
+
+    if (!results.pet.find) {
+        return ('寵物名稱 [' + results.pet.name + "] 查無符合寵物.");
+    }
+    const lvl = results.pet.lvl;
+
+    const out = [];
+
+    out.push("寵物名稱:" + results.pet.name)
+    // out.push("寵物總檔次", results.bps.join(","))
+
+    const petGrowRanges = results.bps;
+    const limit = 10000;
+    const showDetails = 10000;
+    if (results.results.length > limit) {
+        if (results.results.length > showDetails) {
+            out.push("===計算結果===(共有 " + (results.results.length - limit) + " 個結果，超過 " + showDetails + "個組合，不顯示詳細結果), 分布是 血 攻 防 敏 魔 順序");
+        } else {
+            out.push("===計算結果===(只列出 " + limit + " 個結果, 共有: " + (results.results.length) + " 個可能解), 分布是 血 攻 防 敏 魔 順序");
+        }
+    } else {
+        out.push("===計算結果===(所有), 分布是 血 攻 防 敏 魔 順序");
+    }
+
+    let _results = results.results;
+    if (lvl != 1) {
+        _results = _results.sort((n, n2) => {
+            let cp1 = n.ManualPoints.filter(n => n == 0).length;
+            let cp2 = n2.ManualPoints.filter(n => n == 0).length;
+
+            if (cp1 != cp2) {
+                return cp2 - cp1;
+            }
+
+            let diffMX1 = minmax(n.ManualPoints);
+            let diffMX2 = minmax(n2.ManualPoints);
+            let diff1 = diffMX1.length == 1 ? diffMX1[0] : (diffMX1[1] - diffMX1[0]);
+            let diff2 = diffMX2.length == 1 ? diffMX2[0] : (diffMX2[1] - diffMX2[0]);
+
+            return diff2 - diff1;
+
+        });
+    }
+
+    if (_results.length) {
+        const lostBP = minmax(_results.map(n => n.LostBP));
+        const ranges = [
+            minmax(_results.map(n => petGrowRanges[0] - n.GuessRange.hpp)).join(" ~ "),
+            minmax(_results.map(n => petGrowRanges[1] - n.GuessRange.attackp)).join(" ~ "),
+            minmax(_results.map(n => petGrowRanges[2] - n.GuessRange.defendp)).join(" ~ "),
+            minmax(_results.map(n => petGrowRanges[3] - n.GuessRange.agip)).join(" ~ "),
+            minmax(_results.map(n => petGrowRanges[4] - n.GuessRange.mpp)).join(" ~ ")
+        ];
+        const fixed = ranges.filter(n => n.indexOf("~") != -1).length == 0;
+        if (fixed) {
+            out.push("總掉檔: " + lostBP.join(" ~ ") + " , 定檔 : \t" + ranges.join(" , "))
+        } else {
+            out.push("總掉檔: " + lostBP.join(" ~ ") + " , 掉檔可能解範圍: \t" + ranges.join(" , "))
+        }
+    }
+
+    if (_results.length == 0) {
+        out.push(" 無解 (可以確認是否有未點點數或裝備寵物裝備中) ")
+    }
+
+    if (_results.length < showDetails && _results.length != 0) {
+        out.push("===詳細情形===");
+        _results = _results.slice(0, limit);
+        for (let r of _results) {
+            if (r.RandomRange) {
+                if (lvl == 1) {
+                    out.push("* 掉檔:" + r.LostBP + " , " + "本解確定掉檔 " +
+                        calcDiff(r.GuessRange.toArray(), r.MaxGrowBPs).join(", ") + " "
+                        + "\n\t" + ["隨機檔分布\t", r.RandomRange.join(",")].join(", "));
+                } else {
+                    out.push("* 掉檔:" + r.LostBP + " , " + "本解確定掉檔 " +
+                        calcDiff(r.MaxGrowBPs, r.GuessRange.toArray()).join(", ") + " "
+                        + "\n\t" + ["隨機檔分布\t", r.RandomRange.join(",")].join(", ")
+                        + "\t加點分布\t" + r.ManualPoints.join(", "));
+                }
+
+            }
+        }
+    }
+
+    return (out.join("\n"));
 }
 
 function possibleLostRange(growRange, maxBP) {
@@ -596,5 +759,5 @@ function minmax(datas) {
 }
 
 const sumArray = sum;
-export {RealGuess, RealGuessRaw, BP, Stat, GrowRange, sumArray, Pts, calcDiff, minmax};
+export {RealGuess, RealGuessRaw, BP, Stat, GrowRange, sumArray, Pts, calcDiff, minmax, GuessResultToString};
 
