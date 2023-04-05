@@ -457,8 +457,8 @@ class GrowRange {
         const oUpSum = calcUpBp.sum();
 
         const results = [];
-        this.mockLoopRange(this.drop(2, 1, 0, 1, 0), (sumBP, growRange) => {
-            // this.loopRange((sumBP, growRange) => {
+        // this.mockLoopRange(this.drop(2, 1, 0, 1, 0), (sumBP, growRange) => {
+        this.loopRange((sumBP, growRange) => {
 
             if (!growRange.contains(this)) {
                 return false;
