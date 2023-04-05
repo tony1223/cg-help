@@ -12,17 +12,27 @@ const PetCalcCommand = {
                         .setDescription('寵物名稱 <等級(一級可不寫)> 血 魔 攻 防 敏')),
         isSupportMessage: function (msg) {
             const token = msg.content.split(/ +/gi);
+            if (token[0] == "/掉檔") {
+                return true;
+            }
             if (token[1] == "算檔" ||
                 token[1] == "掉檔"
             ) {
                 return true;
             }
+            return false;
         },
         handleMessage: (msg) => {
 
             const cont = msg.content;
             const token = cont.split(/ +/gi);
-            const reason = cont.substring(cont.indexOf(token[1]) + token[1].length);
+            let reason = null;
+
+            if (token[0] == "/掉檔") {
+                reason = cont.substring(cont.indexOf(token[0]) + token[0].length)
+            } else {
+                reason = cont.substring(cont.indexOf(token[1]) + token[1].length)
+            }
             return PetCalcCommand.handler(reason, (res) => {
                     msg.channel.send(res);
                 },
