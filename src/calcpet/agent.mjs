@@ -1,4 +1,4 @@
-import {RealGuess, GuessResultToString} from "./Pets.mjs"
+import {RealGuess, GuessResultToString, GrowRange} from "./Pets.mjs"
 
 // const results = RealGuess("紅色口臭鬼", 1, 122, 102, 36,33, 28);
 
@@ -17,8 +17,8 @@ const testcases = [
     // "粉紅炸彈 97 1521 3379 235 339 296",
     // "紅色口臭鬼 1 122 102 36 33 28",
     // "火焰之刃 1 82 121 45 41 28",
-    // "天使路西法 14 377 444 50 66 56",
-    "水龍蜥 1 125 67 44 46 27"
+    "天使路西法 14 377 444 50 66 56", // new GrowRange(2, 1, 0, 1, 0)
+    // "水龍蜥 1 125 67 44 46 27"
 ]
 
 for (var testcase of testcases) {

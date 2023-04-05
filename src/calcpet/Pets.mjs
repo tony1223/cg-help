@@ -428,23 +428,23 @@ class GrowRange {
         return result;
     }
 
-    guess(stat) {
+    guess(stat, targetGrow = null) {
 
-        let res = this.guessWithSpecficLvlPoint(stat, stat.lvl - 1);
+        let res = this.guessWithSpecficLvlPoint(stat, stat.lvl - 1, targetGrow);
 
         // if (stat.lvl == 1) {
         //     return this.guesslv1(stat, bprate);
         // }
 
         if (res.length == 0 && stat.lvl != 1) {
-            res = this.guessWithSpecficLvlPoint(stat, 0);
+            res = this.guessWithSpecficLvlPoint(stat, 0, targetGrow);
         }
 
         return res;
     }
 
 
-    guessWithSpecficLvlPoint(stat, point) {
+    guessWithSpecficLvlPoint(stat, point, targetGrow) {
         const result = [];
 
         const calcBP = stat.toBP();
@@ -457,105 +457,62 @@ class GrowRange {
         const oUpSum = calcUpBp.sum();
 
         const results = [];
+
+        if (targetGrow) {
+            this.mockLoopRange(this.drop(...targetGrow.toArray()), (sumBP, growRange) => {
+                return this._handleGuessingGrowRange(growRange, stat, point, oSum,
+                    oUpSum, calcUpBp, results, result, sumBP);
+            })
+            return result;
+        }
         // this.mockLoopRange(this.drop(2, 1, 0, 1, 0), (sumBP, growRange) => {
         this.loopRange((sumBP, growRange) => {
-
-            if (!growRange.contains(this)) {
-                return false;
-            }
-            const res = growRange.calcBPAtLevel(stat.lvl, point);
-
-            if ((res.sumFullBP >= oSum && res.sumFullBP <= oUpSum)) {
-                const softLimit = calcDiff(res.baseBP.toArray(), calcUpBp.toArray()).map(n => n + 1);
-                loopForSum(point, 5, softLimit, (a, b, c, d, e) => {
-                    loopForSum(10, 5, [10, 10, 10, 10, 10], (a1, b1, c1, d1, e1) => {
-                        const bps = res.baseBP.toArray();
-                        const bp = new BP(bps[0] + a + growRange.bprate * a1,
-                            bps[1] + b + growRange.bprate * b1,
-                            bps[2] + c + growRange.bprate * c1,
-                            bps[3] + d + growRange.bprate * d1,
-                            bps[4] + e + growRange.bprate * e1,
-                        );
-
-                        const calcState = bp.calcRealNum();
-                        if (calcState.same(stat)) {
-                            results.push({growRange,})
-                            result.push({
-                                SumGrowBPs: sumBP,
-                                MaxGrowBPs: this.bps(),
-                                GuessRange: growRange,
-                                LostBP: growRange.sum() - sumBP,
-                                PossibleLost: possibleLostRange(growRange, this.bps()),
-                                guess: calcState,
-                                ManualPoints: [a, b, c, d, e],
-                                RandomRange: [a1, b1, c1, d1, e1]
-                            });
-                        }
-
-                    })
-                });
-            }
+            return this._handleGuessingGrowRange(growRange, stat, point, oSum,
+                oUpSum, calcUpBp, results, result, sumBP);
         })
 
         return result;
     }
 
 
-    guessWithFullPoint(stat) {
-        const result = [];
+    _handleGuessingGrowRange(growRange, stat, point, oSum, oUpSum, calcUpBp, results, result, sumBP) {
+        if (!growRange.contains(this)) {
+            return false;
+        }
+        const res = growRange.calcBPAtLevel(stat.lvl, point);
 
-        const calcBP = stat.toBP();
+        if ((res.sumFullBP >= oSum && res.sumFullBP <= oUpSum)) {
+            const softLimit = calcDiff(res.baseBP.toArray(), calcUpBp.toArray()).map(n => n + 1);
+            loopForSum(point, 5, softLimit, (a, b, c, d, e) => {
+                loopForSum(10, 5, [10, 10, 10, 10, 10], (a1, b1, c1, d1, e1) => {
+                    const bps = res.baseBP.toArray();
+                    const bp = new BP(bps[0] + a + growRange.bprate * a1,
+                        bps[1] + b + growRange.bprate * b1,
+                        bps[2] + c + growRange.bprate * c1,
+                        bps[3] + d + growRange.bprate * d1,
+                        bps[4] + e + growRange.bprate * e1,
+                    );
 
-        const statUp = new Stat(stat.lvl, stat.hp + 1, stat.mp + 1, stat.attack + 1,
-            stat.defend + 1, stat.agi + 1);
-        const calcUpBp = statUp.toBP();
+                    const calcState = bp.calcRealNum();
+                    if (calcState.same(stat)) {
+                        results.push({growRange,})
+                        result.push({
+                            SumGrowBPs: sumBP,
+                            MaxGrowBPs: this.bps(),
+                            GuessRange: growRange,
+                            LostBP: growRange.sum() - sumBP,
+                            PossibleLost: possibleLostRange(growRange, this.bps()),
+                            guess: calcState,
+                            ManualPoints: [a, b, c, d, e],
+                            RandomRange: [a1, b1, c1, d1, e1]
+                        });
+                    }
 
-        const oSum = calcBP.sum();
-        const oUpSum = calcUpBp.sum();
-
-        const results = [];
-        // this.mockLoopRange(this.drop(4, 0, 4, 1, 1), (sumBP, growRange) => {
-        this.loopRange((sumBP, growRange) => {
-
-            if (!growRange.contains(this)) {
-                return false;
-            }
-            const res = growRange.calcBPAtLevel(stat.lvl);
-
-            if ((res.sumFullBP >= oSum && res.sumFullBP <= oUpSum)) {
-                const softLimit = calcDiff(res.baseBP.toArray(), calcUpBp.toArray()).map(n => n + 1);
-                loopForSum(stat.lvl - 1, 5, softLimit, (a, b, c, d, e) => {
-                    loopForSum(10, 5, [10, 10, 10, 10, 10], (a1, b1, c1, d1, e1) => {
-                        const bps = res.baseBP.toArray();
-                        const bp = new BP(bps[0] + a + growRange.bprate * a1,
-                            bps[1] + b + growRange.bprate * b1,
-                            bps[2] + c + growRange.bprate * c1,
-                            bps[3] + d + growRange.bprate * d1,
-                            bps[4] + e + growRange.bprate * e1,
-                        );
-
-                        const calcState = bp.calcRealNum();
-                        if (calcState.same(stat)) {
-                            results.push({growRange,})
-                            result.push({
-                                SumGrowBPs: sumBP,
-                                MaxGrowBPs: this.bps(),
-                                GuessRange: growRange,
-                                LostBP: growRange.sum() - sumBP,
-                                PossibleLost: possibleLostRange(growRange, this.bps()),
-                                guess: calcState,
-                                ManualPoints: [a, b, c, d, e],
-                                RandomRange: [a1, b1, c1, d1, e1]
-                            });
-                        }
-
-                    })
-                });
-            }
-        })
-
-        return result;
+                })
+            });
+        }
     }
+
 
 }
 
@@ -715,7 +672,7 @@ function RealGuessRaw(input) {
     return RealGuess(token[0], ...token.slice(1).map(n => parseInt(n)));
 }
 
-function RealGuess(name, lvl, hp, mp, attack, def, agi) {
+function RealGuess(name, lvl, hp, mp, attack, def, agi, targetGrow) {
 
     const pet = Pts.filter(n => n[1] == name)[0];
     if (pet == null) {
@@ -729,7 +686,7 @@ function RealGuess(name, lvl, hp, mp, attack, def, agi) {
         const rng = new GrowRange(...bps, bprate);
 
         const stat = new Stat(lvl, hp, mp, attack, def, agi);
-        const results = rng.guess(stat);
+        const results = rng.guess(stat, targetGrow);
 
         return {pet: {name: pet[1], find: true, lvl: lvl}, bps, results};
     } catch (err) {
