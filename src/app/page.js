@@ -187,7 +187,7 @@ export default function Home() {
                     <h2>計算檔次</h2>
                     <span>格式: &lt;寵物名稱&gt; &lt;等級&gt; &lt;血&gt; &lt;魔&gt; &lt;攻&gt; &lt;防&gt; &lt;敏&gt;</span>
                     <br/>
-                    <span>範例: 92 級的粉紅炸彈 血 1500 , 魔 3241 , 攻擊 262,防禦 328 ,魔 300</span>
+                    <span>範例: 92 級的粉紅炸彈 血 1500 , 魔 3241 , 攻擊 262,防禦 328 ,敏 300</span>
                     <br/>
                     <span>輸入: 粉紅炸彈 92 1500 3241 262 328 300 </span>
                     <br/>
