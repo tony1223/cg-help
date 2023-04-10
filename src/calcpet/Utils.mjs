@@ -209,7 +209,7 @@ function GuessResultToString(results, limit, showDetails) {
     const out = [];
 
     out.push("寵物名稱:" + results.pet.name)
-    // out.push("寵物總檔次", results.bps.join(","))
+    out.push("寵物總檔次: " + results.bps.join(","))
 
     const petGrowRanges = results.bps;
 
