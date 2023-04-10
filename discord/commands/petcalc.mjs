@@ -100,7 +100,7 @@ const PetCalcCommand = {
             }
             const limit = 10;
             const showDetails = 100;
-            const res = GuessResultToString(results, limit, showDetails);
+            const res = "輸入資料:" + reason.trim() + "\n" + GuessResultToString(results, limit, showDetails);
 
 
             //紀錄資料之後驗算確認用
