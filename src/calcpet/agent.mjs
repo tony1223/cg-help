@@ -1,4 +1,4 @@
-import {RealGuess, GuessResultToString, GrowRange} from "./Pets.mjs"
+import {RealGuess, GuessResultToString} from "./Pets.mjs"
 
 // const results = RealGuess("紅色口臭鬼", 1, 122, 102, 36,33, 28);
 
@@ -8,6 +8,7 @@ const testcases = [
     // "小蝙蝠 23 521 435 129 101 109",
     // "烈焰龍蝦 38 956 523 318 171 123",
     // "火焰之刃 1 82 121 45 41 28",
+    "螳螂 1 95 83 50 39 33"
     // "烈焰龍蝦 38 956 523 318 171 123",
     // "黃蜂 30 657 381 197 102 158",
     // "夜行貓人 86 1883 1395 411 331 537",
@@ -17,7 +18,7 @@ const testcases = [
     // "粉紅炸彈 97 1521 3379 235 339 296",
     // "紅色口臭鬼 1 122 102 36 33 28",
     // "火焰之刃 1 82 121 45 41 28",
-    "天使路西法 14 377 444 50 66 56", // new GrowRange(2, 1, 0, 1, 0)
+    // "天使路西法 14 377 444 50 66 56", // new GrowRange(2, 1, 0, 1, 0)
     // "水龍蜥 1 125 67 44 46 27"
 ]
 
@@ -26,6 +27,7 @@ for (var testcase of testcases) {
     const token = testcase.split(/ /);
 
     const results = RealGuess(token[0], ...token.slice(1).map(n => parseInt(n)));
-
-    console.log(GuessResultToString(results));
+    const limit = 10;
+    const showDetails = 100;
+    console.log(GuessResultToString(results, limit, showDetails));
 }

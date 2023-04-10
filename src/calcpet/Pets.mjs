@@ -2,6 +2,7 @@
 
 import {Pts} from "./PetData.mjs";
 
+import {sum, calcDiff,_loopForSum,fullRates,loopForSum, minmax, GuessResultToString} from "./Utils.mjs";
 
 class Stat {
     constructor(lvl, hp, mp, attack, defend, agi) {
@@ -191,103 +192,6 @@ class BP {
 
 }
 
-
-function sum(array) {
-    let total = 0;
-
-    array.forEach(value => {
-        total += value;
-    });
-
-    return total;
-}
-
-
-function loopForSum(sum, fields, limits, cb) {
-    _loopForSum(sum, fields, limits, 0, [], cb);
-}
-
-function _loopForSum(sum, fields, limits, nowSum, tmps, cb) {
-    if (fields == tmps.length) {
-        if (nowSum == sum) {
-            cb(...tmps);
-        }
-        return true;
-    }
-
-    for (let i = 0; i <= sum; ++i) {
-        if ((nowSum + i) <= sum && i <= limits[tmps.length]) {
-            _loopForSum(sum, fields, limits, nowSum + i, [...tmps, i], cb);
-        } else {
-            break;
-        }
-    }
-
-    return true;
-}
-
-const calcDiff = function (ar1, ar2) {
-    let out = [];
-    for (let i = 0; i < ar1.length; ++i) {
-        out[i] = ar2[i] - ar1[i];
-    }
-    return out;
-}
-
-
-const fullRates = {
-    "0": 0.00,
-    "1": 0.04,
-    "2": 0.08,
-    "3": 0.12,
-    "4": 0.16,
-    "5": 0.205,
-    "6": 0.25,
-    "7": 0.29,
-    "8": 0.33,
-    "9": 0.37,
-    "10": 0.415,
-    "11": 0.46,
-    "12": 0.50,
-    "13": 0.54,
-    "14": 0.58,
-    "15": 0.625,
-    "16": 0.67,
-    "17": 0.71,
-    "18": 0.75,
-    "19": 0.79,
-    "20": 0.835,
-    "21": 0.88,
-    "22": 0.92,
-    "23": 0.96,
-    "24": 1.00,
-    "25": 1.045,
-    "26": 1.09,
-    "27": 1.13,
-    "28": 1.17,
-    "29": 1.21,
-    "30": 1.255,
-    "31": 1.30,
-    "32": 1.34,
-    "33": 1.38,
-    "34": 1.42,
-    "35": 1.465,
-    "36": 1.51,
-    "37": 1.55,
-    "38": 1.59,
-    "39": 1.63,
-    "40": 1.675,
-    "41": 1.72,
-    "42": 1.76,
-    "43": 1.80,
-    "44": 1.84,
-    "45": 1.885,
-    "46": 1.93,
-    "47": 1.97,
-    "48": 2.01,
-    "49": 2.05,
-    "50": 2.095
-}
 
 // 家寵
 // 總BP =  GrowSum*rate + 2 (隨機) + (n-1)*seed + (n-1)
@@ -516,94 +420,6 @@ class GrowRange {
 
 }
 
-function GuessResultToString(results) {
-
-    if (!results.pet.find) {
-        return ('寵物名稱 [' + results.pet.name + "] 查無符合寵物.");
-    }
-    const lvl = results.pet.lvl;
-
-    const out = [];
-
-    out.push("寵物名稱:" + results.pet.name)
-    // out.push("寵物總檔次", results.bps.join(","))
-
-    const petGrowRanges = results.bps;
-    const limit = 10000;
-    const showDetails = 10000;
-    if (results.results.length > limit) {
-        if (results.results.length > showDetails) {
-            out.push("===計算結果===(共有 " + (results.results.length - limit) + " 個結果，超過 " + showDetails + "個組合，不顯示詳細結果), 分布是 血 攻 防 敏 魔 順序");
-        } else {
-            out.push("===計算結果===(只列出 " + limit + " 個結果, 共有: " + (results.results.length) + " 個可能解), 分布是 血 攻 防 敏 魔 順序");
-        }
-    } else {
-        out.push("===計算結果===(所有), 分布是 血 攻 防 敏 魔 順序");
-    }
-
-    let _results = results.results;
-    if (lvl != 1) {
-        _results = _results.sort((n, n2) => {
-            let cp1 = n.ManualPoints.filter(n => n == 0).length;
-            let cp2 = n2.ManualPoints.filter(n => n == 0).length;
-
-            if (cp1 != cp2) {
-                return cp2 - cp1;
-            }
-
-            let diffMX1 = minmax(n.ManualPoints);
-            let diffMX2 = minmax(n2.ManualPoints);
-            let diff1 = diffMX1.length == 1 ? diffMX1[0] : (diffMX1[1] - diffMX1[0]);
-            let diff2 = diffMX2.length == 1 ? diffMX2[0] : (diffMX2[1] - diffMX2[0]);
-
-            return diff2 - diff1;
-
-        });
-    }
-
-    if (_results.length) {
-        const lostBP = minmax(_results.map(n => n.LostBP));
-        const ranges = [
-            minmax(_results.map(n => petGrowRanges[0] - n.GuessRange.hpp)).join(" ~ "),
-            minmax(_results.map(n => petGrowRanges[1] - n.GuessRange.attackp)).join(" ~ "),
-            minmax(_results.map(n => petGrowRanges[2] - n.GuessRange.defendp)).join(" ~ "),
-            minmax(_results.map(n => petGrowRanges[3] - n.GuessRange.agip)).join(" ~ "),
-            minmax(_results.map(n => petGrowRanges[4] - n.GuessRange.mpp)).join(" ~ ")
-        ];
-        const fixed = ranges.filter(n => n.indexOf("~") != -1).length == 0;
-        if (fixed) {
-            out.push("總掉檔: " + lostBP.join(" ~ ") + " , 定檔 : \t" + ranges.join(" , "))
-        } else {
-            out.push("總掉檔: " + lostBP.join(" ~ ") + " , 掉檔可能解範圍: \t" + ranges.join(" , "))
-        }
-    }
-
-    if (_results.length == 0) {
-        out.push(" 無解 (可以確認是否有未點點數或裝備寵物裝備中) ")
-    }
-
-    if (_results.length < showDetails && _results.length != 0) {
-        out.push("===詳細情形===");
-        _results = _results.slice(0, limit);
-        for (let r of _results) {
-            if (r.RandomRange) {
-                if (lvl == 1) {
-                    out.push("* 掉檔:" + r.LostBP + " , " + "本解確定掉檔 " +
-                        calcDiff(r.GuessRange.toArray(), r.MaxGrowBPs).join(", ") + " "
-                        + "\n\t" + ["隨機檔分布\t", r.RandomRange.join(",")].join(", "));
-                } else {
-                    out.push("* 掉檔:" + r.LostBP + " , " + "本解確定掉檔 " +
-                        calcDiff(r.MaxGrowBPs, r.GuessRange.toArray()).join(", ") + " "
-                        + "\n\t" + ["隨機檔分布\t", r.RandomRange.join(",")].join(", ")
-                        + "\t加點分布\t" + r.ManualPoints.join(", "));
-                }
-
-            }
-        }
-    }
-
-    return (out.join("\n"));
-}
 
 function possibleLostRange(growRange, maxBP) {
     const maxBasePos = 10;
@@ -652,21 +468,6 @@ function possibleLostRange(growRange, maxBP) {
     }
 }
 
-function testcase1() {
-
-    const rng = new GrowRange(11, 15, 28, 28, 33);
-
-    const stat = new Stat(1, 81, 112, 34, 39, 33);
-    const results = rng.guess(stat, bprate);
-
-    for (var r of results) {
-        console.log(r.FullGrowBPs, r.lostBP, r.SumGrowBPs);
-        console.log(r.guess.toString());
-    }
-
-}
-
-
 function RealGuessRaw(input) {
     const token = input.trim().split(/ /);
     return RealGuess(token[0], ...token.slice(1).map(n => parseInt(n)));
@@ -693,26 +494,6 @@ function RealGuess(name, lvl, hp, mp, attack, def, agi, targetGrow) {
         console.log(err);
         throw err;
     }
-}
-
-function minmax(datas) {
-    if (datas == null || !datas.length) {
-        return [null, null];
-    }
-    let min = datas[0];
-    let max = datas[0];
-    for (let i = 1; i < datas.length; ++i) {
-        if (min > datas[i]) {
-            min = datas[i];
-        }
-        if (max < datas[i]) {
-            max = datas[i];
-        }
-    }
-    if (min == max) {
-        return [min];
-    }
-    return [min, max];
 }
 
 const sumArray = sum;
