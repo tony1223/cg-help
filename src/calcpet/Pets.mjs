@@ -2,7 +2,7 @@
 
 import {Pts} from "./PetData.mjs";
 
-import {sum, calcDiff,_loopForSum,fullRates,loopForSum, minmax, GuessResultToString} from "./Utils.mjs";
+import {sum, calcDiff, _loopForSum, fullRates, loopForSum, minmax, GuessResultToString} from "./Utils.mjs";
 
 class Stat {
     constructor(lvl, hp, mp, attack, defend, agi) {
@@ -74,12 +74,27 @@ class Stat {
         return this.same(stat);
     }
 
+    toArray() {
+        return [this.hp, this.attack, this.defend, this.agi, this.mp];
+    }
+
     same(stat) {
-        return this.hp == stat.hp &&
-            this.mp == stat.mp &&
-            this.attack == stat.attack &&
-            this.defend == stat.defend &&
-            this.agi == stat.agi
+
+        if (Math.abs(sum(this.toArray()) - sum(stat.toArray())) > 1) {
+            return false;
+        }
+
+        if (calcDiff(this.toArray(), stat.toArray()).filter(n => Math.abs(n) > 1).length) {
+            return false;
+        }
+
+        return true;
+
+        // return this.hp == stat.hp &&
+        //     this.mp == stat.mp &&
+        //     this.attack == stat.attack &&
+        //     this.defend == stat.defend &&
+        //     this.agi == stat.agi
     }
 }
 
