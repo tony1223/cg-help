@@ -78,13 +78,13 @@ class Stat {
         return [this.hp, this.attack, this.defend, this.agi, this.mp];
     }
 
-    same(stat) {
+    same(stat,tolerance = 0) {
 
-        if (Math.abs(sum(this.toArray()) - sum(stat.toArray())) > 1) {
+        if (Math.abs(sum(this.toArray()) - sum(stat.toArray())) > tolerance) {
             return false;
         }
 
-        if (calcDiff(this.toArray(), stat.toArray()).filter(n => Math.abs(n) > 1).length) {
+        if (calcDiff(this.toArray(), stat.toArray()).filter(n => Math.abs(n) > tolerance).length) {
             return false;
         }
 
