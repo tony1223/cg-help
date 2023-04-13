@@ -19,15 +19,21 @@ const testcases = [
     // "紅色口臭鬼 1 122 102 36 33 28",
     // "火焰之刃 1 82 121 45 41 28",
     // "天使路西法 14 377 444 50 66 56", // new GrowRange(2, 1, 0, 1, 0)
-    // "水龍蜥 1 125 67 44 46 27"
-    "海盜 52 805 655 254 228 172"
+    // "水龍蜥 1 125 67 44 46 27",
+    // "海盜 52 805 655 254 228 172",
+    "改造烈風哥布林 112 76 51 39 33 "
 ]
 
 for (var testcase of testcases) {
     console.log("輸入資料:" + testcase);
-    const token = testcase.split(/ /);
+    const token = testcase.split(/ /).filter(n => n != "");
 
-    const results = RealGuess(token[0], ...token.slice(1).map(n => parseInt(n)));
+    const params = token.slice(1).map(n => parseInt(n));
+    const lvl = params.length == 5 ? 1 : params[0];
+    const otherparams = params.length == 5 ? params : params.slice(1);
+    const results = RealGuess(token[0], lvl,
+        ...otherparams
+    );
     const limit = 10;
     const showDetails = 100;
     console.log(GuessResultToString(results, limit, showDetails));
