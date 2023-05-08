@@ -35,6 +35,7 @@ async function askGPT(word) {
                 console.error(error);
                 return;
             }
+
             if (body.choices.length == 0) {
                 resolve([]);
                 return null;

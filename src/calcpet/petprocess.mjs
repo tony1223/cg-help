@@ -21,3 +21,7 @@ const mappedpet2 = pet2s.slice(1).map(n => [null, n[1], null,
 
 fs.writeFileSync("mergedpets.json",
     JSON.stringify([...pts2, ...mappedpet2]));
+
+console.log("done:" + [...pts2, ...mappedpet2].length)
+
+console.log([...pts2, ...mappedpet2]);

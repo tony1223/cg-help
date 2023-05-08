@@ -1,0 +1,2 @@
+
+{"command":"Calc","input":" 死灰螳螂 82 1467 1404 733 311 324","results":{"pet":{"name":"死灰螳螂","find":true,"lvl":82},"bps":[15,40,17,33,15],"results":[]}}
