@@ -1,6 +1,18 @@
 ﻿import {lusolve} from "mathjs";
 
-import {Pts} from "./PetData.mjs";
+import {Data, updateData} from "./PetData.mjs";
+
+
+let Pts = Data;
+
+let updatePets = async () => {
+    const datas = await updateData();
+    if (datas.length > 0) {
+        console.log("update data:" + datas.length);
+        Pts = datas;
+    }
+};
+
 
 import {sum, calcDiff, _loopForSum, fullRates, loopForSum, minmax, GuessResultToString} from "./Utils.mjs";
 
@@ -78,7 +90,7 @@ class Stat {
         return [this.hp, this.attack, this.defend, this.agi, this.mp];
     }
 
-    same(stat,tolerance = 0) {
+    same(stat, tolerance = 0) {
 
         if (Math.abs(sum(this.toArray()) - sum(stat.toArray())) > tolerance) {
             return false;
@@ -512,5 +524,5 @@ function RealGuess(name, lvl, hp, mp, attack, def, agi, targetGrow) {
 }
 
 const sumArray = sum;
-export {RealGuess, RealGuessRaw, BP, Stat, GrowRange, sumArray, Pts, calcDiff, minmax, GuessResultToString};
+export {RealGuess, RealGuessRaw, BP, Stat, GrowRange, sumArray, Pts, calcDiff, minmax, GuessResultToString, updatePets};
 

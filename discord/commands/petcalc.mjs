@@ -1,6 +1,10 @@
 import {SlashCommandBuilder} from "discord.js";
-import {RealGuess, calcDiff, minmax, GuessResultToString} from "../../src/calcpet/Pets.mjs"
+import {RealGuess, calcDiff, minmax, GuessResultToString, updatePets} from "../../src/calcpet/Pets.mjs"
 import fs from "fs";
+
+updatePets();
+setInterval(updatePets, 1000 * 60 * 60 * 4);
+
 ///掉檔 紅色口臭鬼 1  122  102  36 33  28
 const PetCalcCommand = {
         data:
