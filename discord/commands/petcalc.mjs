@@ -30,7 +30,7 @@ const PetCalcCommand = {
         isSupportMessage: function (msg) {
             const token = msg.content.split(/ +/gi);
 
-            if (PetCalcCommand.lookup(token[0])) {
+            if (PetCalcCommand.lookup(token[0]) || PetCalcCommand.lookup(token[1])) {
                 return true;
             }
             return false;
