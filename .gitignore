@@ -1,3 +1,4 @@
+log
 config.json
 data.json
 src/calcpet/pts.json
@@ -8,3 +9,5 @@ node_modules
 dist/main.js
 .next
 .vscode
+mergedpets.json
+spetdata.ini
