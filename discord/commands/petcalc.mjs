@@ -1,9 +1,22 @@
 import {SlashCommandBuilder} from "discord.js";
-import {RealGuess, calcDiff, minmax, GuessResultToString, updatePets} from "../../src/calcpet/Pets.mjs"
+import {RealGuess, GuessResultToString, updatePets, Pts} from "../../src/calcpet/Pets.mjs"
 import fs from "fs";
 
 updatePets();
 setInterval(updatePets, 1000 * 60 * 60 * 4);
+
+function findOverlap(a, b) {
+    if (b == null) {
+        return false;
+    }
+    for (let i = 0; i < a.length; i++) {
+        const ind = b.indexOf(a[i]);
+        if (ind !== -1) {
+            return true; // 有找到重疊字，回傳 true
+        }
+    }
+    return false; // 沒有找到重疊字，回傳 false
+}
 
 ///掉檔 紅色口臭鬼 1  122  102  36 33  28
 const PetCalcCommand = {
@@ -16,15 +29,15 @@ const PetCalcCommand = {
                         .setDescription('寵物名稱 <等級(一級可不寫)> 血 魔 攻 防 敏')),
         isSupportMessage: function (msg) {
             const token = msg.content.split(/ +/gi);
-            if (token[0] == "/掉檔") {
-                return true;
-            }
-            if (token[1] == "算檔" ||
-                token[1] == "掉檔"
-            ) {
+
+            if (PetCalcCommand.lookup(token[0])) {
                 return true;
             }
             return false;
+        },
+        lookup(text) {
+            const commands = ["算檔", "算黨", "掉檔", "掉黨"];
+            return commands.filter(n => text == n || text.indexOf(n) != -1).length;
         },
         handleMessage: (msg) => {
 
@@ -32,13 +45,14 @@ const PetCalcCommand = {
             const token = cont.split(/ +/gi);
             let reason = null;
 
-            if (token[0] == "/掉檔") {
+            if (PetCalcCommand.lookup(token[0])) {
                 reason = cont.substring(cont.indexOf(token[0]) + token[0].length)
             } else {
                 reason = cont.substring(cont.indexOf(token[1]) + token[1].length)
             }
             return PetCalcCommand.handler(reason, (res) => {
                     msg.channel.send(res);
+                    msg.channel.send(("\n==\n 指令: /掉檔 寵物名稱 <等級(一級可不寫)> 血 魔 攻 防 敏 "));
                 },
                 {});
         },
@@ -89,13 +103,20 @@ const PetCalcCommand = {
                 ];
             }
 
-            const results = RealGuess(tokens[0],
+            const petName = tokens[0];
+            const results = RealGuess(petName,
                 lvl, ...params);
 
             logResult.results = results;
 
             if (!results.pet.find) {
-                await reply({content: '寵物名稱 [' + tokens[0] + "] 查無符合寵物.", ephemeral: true});
+                const possibleNames = Pts.filter(n => n[1].length == petName.length && findOverlap(n[1], petName)).map(n => "[" + n[1] + "]");
+
+                let msg = "";
+                if (possibleNames.length) {
+                    msg = "你是否要找以下這些寵物？ " + possibleNames.join("、") + " ";
+                }
+                await reply({content: '寵物名稱 [' + petName + "] 查無符合寵物.\n" + msg, ephemeral: true});
 
                 fs.appendFileSync("./log/" + today.getFullYear() + "" + today.getMonth() + "" + today.getDate() + ".txt",
                     "\r\n" + JSON.stringify(logResult), 'utf8'
