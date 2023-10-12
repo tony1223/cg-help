@@ -99,8 +99,9 @@ const fullRates = {
     "50": 2.095,
     "51": 2.04,
     "52": 2.08,
+    "53": 2.12,
+    "54": 2.16,
 }
-
 
 function _renderDetails(out, _results, limit, lvl) {
     out.push("===詳細情形===");

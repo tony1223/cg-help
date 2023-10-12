@@ -1,3 +1,0 @@
-
-{"user":{"id":"856492852350812201","username":"KoYa","discriminator":"5138"},"guild":{"id":"1087653345164021830","name":"KoYa"},"command":"Calc","input":"樹精 105 3402 1125 430 590 200","results":{"pet":{"name":"樹精","find":true,"lvl":105},"bps":[32,17,32,12,17],"results":[]}}
-{"user":{"id":"856492852350812201","username":"KoYa","discriminator":"5138"},"guild":{"id":"1087653345164021830","name":"KoYa"},"command":"Calc","input":"改造樹精 105 3402 1125 430 590 200","results":{"pet":{"name":"改造樹精","find":false,"lvl":105}}}

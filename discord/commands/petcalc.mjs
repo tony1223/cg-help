@@ -36,6 +36,7 @@ const PetCalcCommand = {
             return false;
         },
         lookup(text) {
+	    if( text == null ){ return false; }
             const commands = ["算檔", "算黨", "掉檔", "掉黨"];
             return commands.filter(n => text == n || text.indexOf(n) != -1).length;
         },
