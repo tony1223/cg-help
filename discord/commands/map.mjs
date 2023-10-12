@@ -157,7 +157,7 @@ const MapCommand = {
                 var newtime = minutes * (Math.floor(diff / minutes) + 1);
 
                 let date = new Date(time + newtime * 1000 * 60);
-                return n + ":" + date.toLocaleDateString() + " " + date.toLocaleTimeString();
+                return n + ": " + date.toLocaleTimeString();
             })
 
             await interaction.editReply(
