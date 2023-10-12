@@ -84,7 +84,7 @@ function parseElementString(str) {
 }
 
 
-const url = 'https://sites.google.com/view/goodluck2cg/%E5%B0%88%E5%B1%AC%E5%AF%B5%E7%89%A9/%E5%85%A8%E5%AF%B5%E7%89%A9%E4%B8%8D%E5%88%86%E7%B3%BB?authuser=0';
+const url = 'https://sites.google.com/view/goodluck2cg/%E5%B0%88%E5%B1%AC%E5%AF%B5%E7%89%A9/%E4%B8%8D%E5%88%86%E7%B3%BB?authuser=0';
 
 async function parse() {
 
