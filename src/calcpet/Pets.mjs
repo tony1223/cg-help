@@ -359,9 +359,8 @@ class GrowRange {
         return result;
     }
 
-    guess(stat, targetGrow = null) {
-
-        let res = this.guessWithSpecficLvlPoint(stat, stat.lvl - 1, targetGrow);
+    guess(stat,notorderpoint = 0, targetGrow = null) {
+        let res = this.guessWithSpecficLvlPoint(stat, stat.lvl - 1 - notorderpoint, targetGrow);
 
         // if (stat.lvl == 1) {
         //     return this.guesslv1(stat, bprate);
@@ -425,7 +424,7 @@ class GrowRange {
                     );
 
                     const calcState = bp.calcRealNum();
-                    if (calcState.same(stat)) {
+                    if (calcState.same(stat,1)) {
                         results.push({growRange,})
                         result.push({
                             SumGrowBPs: sumBP,
@@ -500,8 +499,7 @@ function RealGuessRaw(input) {
     return RealGuess(token[0], ...token.slice(1).map(n => parseInt(n)));
 }
 
-function RealGuess(name, lvl, hp, mp, attack, def, agi, targetGrow) {
-
+function RealGuess(name, lvl, hp, mp, attack, def, agi, notorderpoint,targetGrow) {
     const pet = Pts.filter(n => n[1] == name)[0];
     if (pet == null) {
         return {pet: {name: name, find: false, lvl: lvl}};
@@ -514,7 +512,7 @@ function RealGuess(name, lvl, hp, mp, attack, def, agi, targetGrow) {
         const rng = new GrowRange(...bps, bprate);
 
         const stat = new Stat(lvl, hp, mp, attack, def, agi);
-        const results = rng.guess(stat, targetGrow);
+        const results = rng.guess(stat,notorderpoint, targetGrow);
 
         return {pet: {name: pet[1], find: true, lvl: lvl}, bps, results};
     } catch (err) {
