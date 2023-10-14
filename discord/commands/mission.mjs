@@ -16,7 +16,7 @@ const MissionCommand = {
                 .setDescription('查詢任務位置')
                 .addStringOption(option =>
                     option.setName('name')
-                        .setDescription('NPC名字')),
+                        .setDescription('NPC名字或道具名稱(部分即可)')),
         async execute(interaction) {
 
             const map = (interaction.options.getString('name') ?? '').trim();
@@ -39,14 +39,25 @@ const MissionCommand = {
                 mission = JSON.parse(res);
             }
 
-            if (mission[map] && mission[map].length) {
-                let missionElement = mission[map].map(({
-                                                           name,
-                                                           level,
-                                                           addr,
-                                                           detail,
-                                                           reporter
-                                                       }) => name + "," + level + "," + addr + "," + detail + ", 回報人:" + reporter)
+            var results = [];
+            if (mission[map]) {
+                results.push.apply(results, mission[map]);
+            } else {
+                for (var k in mission) {
+                    results.push.apply(results, mission[k].filter(n => (n.item || "").indexOf(map) != -1));
+                }
+            }
+
+
+            if (results.length) {
+                let missionElement = results.map(({
+                                                      name,
+                                                      level,
+                                                      addr,
+                                                      item,
+                                                      detail,
+                                                      reporter
+                                                  }) => name + "," + level + ",地點:" + addr + ",道具:" + item + ",備註" + detail + ", 回報人:" + reporter)
                     .join("\n");
                 await interaction.editReply(map + "的查詢結果:\n" + missionElement);
             } else {

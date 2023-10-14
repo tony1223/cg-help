@@ -24,6 +24,9 @@ const MissionRegCommand = {
                     option.setName('addr')
                         .setDescription('地區'))
                 .addStringOption(option =>
+                    option.setName('item')
+                        .setDescription('道具名稱數量'))
+                .addStringOption(option =>
                     option.setName('detail')
                         .setDescription('描述')),
         async execute(interaction) {
@@ -31,6 +34,7 @@ const MissionRegCommand = {
             const name = (interaction.options.getString('name') ?? '').trim();
             const level = (interaction.options.getString('level') ?? '').trim();
             const addr = (interaction.options.getString('addr') ?? '').trim();
+            const item = (interaction.options.getString('item') ?? '').trim();
             const detail = (interaction.options.getString('detail') ?? '').trim();
 
             await interaction.deferReply({ephemeral: true});
@@ -55,7 +59,7 @@ const MissionRegCommand = {
             }
 
             var obj = {
-                name, level, addr, detail,
+                name, level, addr, detail, item,
                 reporter: interaction.user.username
             };
 
