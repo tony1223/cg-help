@@ -57,7 +57,7 @@ const MissionCommand = {
                                                       item,
                                                       detail,
                                                       reporter
-                                                  }) => name + "," + level + ",地點:" + addr + ",道具:" + item + ",備註" + detail + ", 回報人:" + reporter)
+                                                  }) => name + "," + level + ",地點:" + addr + ",道具:" + item + ",備註:" + detail + ", 回報人:" + reporter)
                     .join("\n");
                 await interaction.editReply(map + "的查詢結果:\n" + missionElement);
             } else {

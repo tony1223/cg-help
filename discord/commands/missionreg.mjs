@@ -15,6 +15,9 @@ const MissionRegCommand = {
                 .setName('任務登記')
                 .setDescription('登記任務')
                 .addStringOption(option =>
+                    option.setName('userlevel')
+                        .setDescription('玩家職業等級(見習、正職等)'))
+                .addStringOption(option =>
                     option.setName('name')
                         .setDescription('NPC名字'))
                 .addStringOption(option =>
@@ -31,6 +34,7 @@ const MissionRegCommand = {
                         .setDescription('描述')),
         async execute(interaction) {
 
+            const userlevel = (interaction.options.getString('userlevel') ?? '').trim();
             const name = (interaction.options.getString('name') ?? '').trim();
             const level = (interaction.options.getString('level') ?? '').trim();
             const addr = (interaction.options.getString('addr') ?? '').trim();
@@ -60,6 +64,7 @@ const MissionRegCommand = {
 
             var obj = {
                 name, level, addr, detail, item,
+                userlevel,
                 reporter: interaction.user.username
             };
 
