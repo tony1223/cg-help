@@ -86,7 +86,7 @@ function parseElementString(str) {
 
 const url = 'https://sites.google.com/view/goodluck2cg/%E5%B0%88%E5%B1%AC%E5%AF%B5%E7%89%A9/%E4%B8%8D%E5%88%86%E7%B3%BB?authuser=0';
 
-async function parse() {
+async function Parse() {
 
     let tableData = null;
     if (true) { //!fs.existsSync("data.json")){
@@ -155,7 +155,7 @@ async function parse() {
 
     const custom = [[null, "小可愛優奈", null, "28", "28", "28", "28", "28", 0.2]];
 
-    let allpets = [...pts2,...custom , ...mappedpet2];
+    let allpets = [...pts2, ...custom, ...mappedpet2];
     fs.writeFileSync("mergedpets.json",
         JSON.stringify(allpets));
 
@@ -163,13 +163,5 @@ async function parse() {
 
 }
 
-export {parse};
+export {Parse};
 
-//   const elements1 = parseElementString("地3水7");
-// console.log(elements1); // { 火: 5, 風: 5 }
-
-// const elements2 = parseElementString("火10");
-// console.log(elements2); // { 火: 10 }
-
-// const elements3 = parseElementString("地5水5");
-// console.log(elements3); // { 地: 5, 水: 5 }
