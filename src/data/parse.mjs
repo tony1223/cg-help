@@ -14,7 +14,7 @@ async function sleep(ms) {
 }
 
 async function scrapeIFrameTable(url) {
-    const browser = await puppeteer.launch({headless: true});
+    const browser = await puppeteer.launch({headless: "new"});
     const page = await browser.newPage();
     await page.goto(url, {waitUntil: 'networkidle2'});
     page.on('console', msg => {
@@ -91,6 +91,7 @@ async function Parse() {
     let tableData = null;
     if (true) { //!fs.existsSync("data.json")){
         tableData = await scrapeIFrameTable(url);
+        console.log("updated data");
         fs.writeFileSync("data.json", JSON.stringify(tableData));
     }
 

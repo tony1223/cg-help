@@ -6,6 +6,9 @@ import fs from "fs";
 
 let data = PetDefaultData;
 
+setTimeout(async () => {
+    data = await Parse();
+})
 setInterval(async function () {
     data = await Parse();
 }, 1000 * 60 * 60 * 4);
@@ -115,7 +118,7 @@ const PetCalcCommand = {
             logResult.results = results;
 
             if (!results.pet.find) {
-                const possibleNames = PetDefaultData.filter(n => n[1].length == petName.length && findOverlap(n[1], petName)).map(n => "[" + n[1] + "]");
+                const possibleNames = data.filter(n => n[1].length == petName.length && findOverlap(n[1], petName)).map(n => "[" + n[1] + "]");
 
                 let msg = "";
                 if (possibleNames.length) {
