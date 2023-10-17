@@ -1,9 +1,17 @@
 import {SlashCommandBuilder} from "discord.js";
-import {RealGuess, GuessResultToString, updatePets, Pts} from "../../src/calcpet/Pets.mjs"
+import {RealGuess, GuessResultToString, PetDefaultData} from "cg-pet-calc"
+import {Parse} from "../../src/data/parse.mjs"
 import fs from "fs";
 
-updatePets();
-setInterval(updatePets, 1000 * 60 * 60 * 4);
+
+let data = PetDefaultData;
+
+setTimeout(async () => {
+    data = await Parse();
+})
+setInterval(async function () {
+    data = await Parse();
+}, 1000 * 60 * 60 * 4);
 
 function findOverlap(a, b) {
     if (b == null) {
@@ -105,13 +113,13 @@ const PetCalcCommand = {
             }
 
             const petName = tokens[0];
-            const results = RealGuess(petName,
+            const results = RealGuess(data, petName,
                 lvl, ...params);
 
             logResult.results = results;
 
             if (!results.pet.find) {
-                const possibleNames = Pts.filter(n => n[1].length == petName.length && findOverlap(n[1], petName)).map(n => "[" + n[1] + "]");
+                const possibleNames = data.filter(n => n[1].length == petName.length && findOverlap(n[1], petName)).map(n => "[" + n[1] + "]");
 
                 let msg = "";
                 if (possibleNames.length) {
