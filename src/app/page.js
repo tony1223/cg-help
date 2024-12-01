@@ -27,19 +27,25 @@ import {RealGuess, GuessResultToString, PetDefaultData,calcDiff, minmax, RealGue
 const Pts = PetDefaultData;
 
 export default function Home() {
-
-    const [inputValue, setInputValue] = useState('');
-    const [inputProps, setInputProps] = useStateCallback('');
-    const [result, setResult] = useState('');
-
+    const [petInputs, setPetInputs] = useState({
+        name: '',
+        level: '1',  // 預設等級為 1
+        stats: ''    // 血魔攻防敏的字串
+    });
+    const [resultNopoint, setResultNopoint] = useState('');
+    const [resultPoint, setResultPoint] = useState('');
+    const [resultLevel, setResultLevel] = useState('');
     const [suggestions, setSuggestions] = useState([]);
+    const [resultTab, setResultTab] = useState('point');
 
-    const handleInputChange = (event) => {
-        setInputValue(event.target.value);
-        fetchSuggestions(event.target.value);
-    };
-    const handleInputProps = (event) => {
-        setInputProps(event.target.value);
+    const handleInputChange = (field, value) => {
+        setPetInputs(prev => ({
+            ...prev,
+            [field]: value
+        }));
+        if (field === 'name') {
+            fetchSuggestions(value);
+        }
     };
 
     const fetchSuggestions = async (value) => {
@@ -47,39 +53,86 @@ export default function Home() {
     };
 
     const handleSuggestionClick = (suggestion) => {
-        setInputValue('');
-        setInputProps(suggestion + " ");
+        setPetInputs(prev => ({
+            ...prev,
+            name: suggestion
+        }));
         setSuggestions([]);
     };
 
     useEffect(() => {
         if (location.hash != "") {
             const val = decodeURIComponent(location.hash.substring(1));
-            setInputProps(val);
+            setPetInputs(prev => ({
+                ...prev,
+                stats: val
+            }));
             _calcProps(val)
         } else {
-            setInputProps('小蝙蝠 20 377 467 170 94 106');
+            setPetInputs(prev => ({
+                ...prev,
+                name: '小蝙蝠',
+                level: '20',
+                stats: '377 467 170 94 106'
+            }));
         }
     }, []);
     const calcProps = () => {
-        location.hash = (inputProps);
-        _calcProps();
+        const inputString = `${petInputs.name} ${petInputs.level} ${petInputs.stats}`;
+        location.hash = (inputString);
+        _calcProps(inputString);
+        
+        // Add smooth scroll to result textarea
+        document.querySelector('textarea').scrollIntoView({ behavior: 'smooth' });
     }
 
     const _calcProps = (val) => {
-        // console.log(inputProps);/
-        const results = RealGuessRaw(PetDefaultData, val || inputProps);
+        // Split the input string into parts if val is provided
+        let inputName, inputLevel, inputStats;
+        if (val) {
+            const parts = val.trim().split(/\s+/);
+            // Find the first number in the array to determine where stats begin
+            const firstNumberIndex = parts.findIndex(part => !isNaN(part));
+            if (firstNumberIndex > 0) {
+                inputName = parts.slice(0, firstNumberIndex).join(' ');
+                inputLevel = parts[firstNumberIndex];
+                inputStats = parts.slice(firstNumberIndex + 1).join(' ');
+                petInputs.name = inputName;
+                petInputs.level = inputLevel;
+                petInputs.stats = inputStats;
+            }
+        }
+        _pointResult(val,petInputs,setResultPoint)
 
+        setResultTab('point');
+        return true;
 
+    }
+
+    const _pointResult = (val,petInputs,setResult) => {
+
+        // Use the split values or fall back to petInputs
+        const results = RealGuessRaw(PetDefaultData, val || petInputs.stats);
+        
         if (!results.pet.find) {
-            setResult('寵物名稱 [' + results.pet.name + "] 查無符合寵物.");
+            setResult('寵物名稱 [' + (petInputs.name || results.pet.name) + "] 查無符合寵物.");
             return true;
         }
+        
+        // Update petInputs with the parsed values if they exist
+        if (petInputs.name && petInputs.level && petInputs.stats) {
+            setPetInputs(prev => ({
+                ...prev,
+                name: petInputs.name,
+                level: petInputs.level,
+                stats: petInputs.stats
+            }));
+        }
+
         const lvl = results.pet.lvl;
 
         const out = [];
-        out.push("輸入資料:" + inputProps);
-
+        out.push("輸入資料:" + petInputs.stats);
         out.push("寵物名稱:" + results.pet.name)
         // out.push("寵物總檔次", results.bps.join(","))
 
@@ -158,45 +211,135 @@ export default function Home() {
         }
 
         setResult(out.join("\n"));
-
-        return true;
-
     }
 
     return (
         <main className="flex flex-col justify-center items-center pt-12 w-full">
             <h1 className="text-3xl font-bold">寵物算檔</h1>
-            <form className="my-5" onSubmit={(e) => { e.preventDefault() }}>
-                <div className="flex items-center gap-2">
-                    <label className="text-base">搜尋寵物</label>
-                    <input type="text" className="input input-sm input-bordered" value={inputValue} onChange={handleInputChange} />
-                </div>
-                <div>
-                    {suggestions.length > 0 && (
-                        <ul className="max-h-32 overflow-scroll">
-                            {suggestions.map((suggestion) => (
-                                <li key={suggestion} onClick={() => handleSuggestionClick(suggestion)}>
-                                    {suggestion}
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                </div>
-                <div class="divider" />
+            <form className="my-5 w-full max-w-2xl" onSubmit={(e) => { e.preventDefault() }}>
                 <div className="card card-body">
                     <h2 className="card-title">計算檔次</h2>
-                    <p>格式: &lt;寵物名稱&gt; &lt;等級&gt; &lt;血&gt; &lt;魔&gt; &lt;攻&gt; &lt;防&gt; &lt;敏&gt;</p>
-                    <p>範例: 92 級的粉紅炸彈 血 1500, 魔 3241, 攻擊 262, 防禦 328, 敏 300</p>
-                    <p>輸入: 粉紅炸彈 92 1500 3241 262 328 300 </p>
-                </div>
-                <div className="flex items-center gap-2">
-                    <input type="text" className="input input-sm input-bordered w-[400px]" value={inputProps} onChange={handleInputProps} />
-                    <button className="btn btn-sm btn-primary" onClick={calcProps}>
-                        計算
-                    </button>
+                    
+                    <div className="grid grid-cols-1 gap-4">
+                        {/* 寵物名稱區塊 */}
+                        <div className="form-control">
+                            <label className="label">
+                                <span className="label-text">寵物名稱</span>
+                            </label>
+                            <input 
+                                type="text" 
+                                className="input input-bordered" 
+                                value={petInputs.name}
+                                onChange={(e) => handleInputChange('name', e.target.value)}
+                                placeholder="輸入寵物名稱"
+                            />
+                            {suggestions.length > 0 && (
+                                <ul className="mt-1 max-h-32 overflow-scroll bg-base-200 rounded-lg">
+                                    {suggestions.map((suggestion) => (
+                                        <li 
+                                            key={suggestion} 
+                                            onClick={() => handleSuggestionClick(suggestion)}
+                                            className="p-2 hover:bg-base-300 cursor-pointer"
+                                        >
+                                            {suggestion}
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
+
+                        {/* 等級區塊 */}
+                        <div className="form-control">
+                            <label className="label">
+                                <span className="label-text">等級</span>
+                            </label>
+                            <input 
+                                type="number" 
+                                className="input input-bordered" 
+                                value={petInputs.level}
+                                onChange={(e) => handleInputChange('level', e.target.value)}
+                                placeholder="預設為1級"
+                            />
+                        </div>
+
+                        {/* 能力值區塊 */}
+                        <div className="form-control">
+                            <label className="label">
+                                <span className="label-text">能力值 (血 魔 攻 防 敏)</span>
+                                <span className="label-text-alt">請依序輸入數值，以空格分隔</span>
+                            </label>
+                            <input 
+                                type="text" 
+                                className="input input-bordered" 
+                                value={petInputs.stats}
+                                onChange={(e) => handleInputChange('stats', e.target.value)}
+                                placeholder="例如: 1500 3241 262 328 300"
+                            />
+                        </div>
+
+                        <div className="mt-4">
+                            <button className="btn btn-primary w-full" onClick={calcProps}>
+                                計算
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* 說明區塊 */}
+                    <div className="mt-4 text-sm opacity-75">
+                        <p>格式說明：</p>
+                        <p>1. 寵物名稱：輸入完整寵物名稱</p>
+                        <p>2. 等級：預設為1級，可以依需求調整</p>
+                        <p>3. 能力值：依序輸入 血量 魔力 攻擊 防禦 敏捷，數值間用空格分隔</p>
+                        <p>範例：粉紅炸彈 92級的數值為 1500 3241 262 328 300</p>
+                    </div>
                 </div>
             </form>
-            <textarea className="mt-8 textarea textarea-bordered h-[400px] min-w-[50%]" readOnly value={result} />
+            <div className="mt-8 min-w-[50%]">
+                <div className="tabs tabs-boxed">
+                    <a 
+                        className={`tab ${resultTab === 'point' ? 'tab-active' : ''}`}
+                        onClick={() => setResultTab('point')}
+                    >
+                        有加點(限全加，目前不支援部分加點)
+                    </a>
+                    <a 
+                        className={`tab ${resultTab === 'nopoint' ? 'tab-active' : ''}`}
+                        onClick={() => setResultTab('nopoint')}
+                    >
+                        無加點
+                    </a>
+                    <a 
+                        className={`tab ${resultTab === 'level' ? 'tab-active' : ''}`}
+                        onClick={() => setResultTab('level')}
+                    >
+                        等級推估
+                    </a>
+                </div>
+                
+                <div className="mt-2">
+                    {resultTab === 'point' && (
+                        <textarea 
+                            className="textarea textarea-bordered h-[400px] w-full" 
+                            readOnly 
+                            value={resultPoint} 
+                        />
+                    )}                    
+                    {resultTab === 'nopoint' && (
+                        <textarea 
+                            className="textarea textarea-bordered h-[400px] w-full" 
+                            readOnly 
+                            value={resultNopoint} 
+                        />
+                    )}
+                    {resultTab === 'level' && (
+                        <textarea 
+                            className="textarea textarea-bordered h-[400px] w-full" 
+                            readOnly 
+                            value={resultLevel} 
+                        />
+                    )}
+                </div>
+            </div>
         </main>
     )
 }

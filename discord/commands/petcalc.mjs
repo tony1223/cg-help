@@ -2,17 +2,14 @@ import {SlashCommandBuilder} from "discord.js";
 import {RealGuess, GuessResultToString, PetDefaultData} from "cg-pet-calc"
 import {Parse} from "../../src/data/parse.mjs"
 import fs from "fs";
-
+import petConfig from '../../config/pet-data.json' assert { type: "json" };
 
 let data = PetDefaultData;
 
-function pad(data){
-data.push([null, "優奈", null, "15", "25", "33", "19", "33", 0.2])
-data.push([null,"紫燄",null,"41","44","16","16","8",0.2]);
-data.push([null,"青燄",null,16,8,16,41,44,0.2]);
-data.push([null,"蒼燄",null,16,44,16,41,8,0.2]);
-data.push([null,"聖誕大公雞",null,35,6,12,22,50,0.2]);
-data.push([72,"改造水蜘蛛",null,"28","20","21","24","32",0.2]);
+function pad(data) {
+    petConfig.additionalPets.forEach(pet => {
+        data.push(pet);
+    });
 }
 
 setTimeout(async function(){
