@@ -8,12 +8,13 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "cg-pet-calc": "^1.0.0",
+    "cg-pet-calc": "^1.0.1",
+    "cheerio": "^1.0.0-rc.12",
     "discord.js": "^14.8.0",
     "dotenv": "^16.0.3",
     "mathjs": "^11.7.0",
     "next": "13.2.4",
-    "puppeteer": "^1.3.0",
+    "puppeteer": "^22.4.1",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "request": "^2.88.2",

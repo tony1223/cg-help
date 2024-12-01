@@ -25,6 +25,120 @@ const client = new Client({
 
 client.once('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`);
+
+
+    // 建立檢查函數
+    async function checkNewbieRoles() {
+	    console.log("開始檢查");
+        try {
+            // 讀取已儲存的加入時間記錄
+            let joinDates = {};
+            try {
+                const data = await readFile(new URL('../joinDates.json', import.meta.url));
+                joinDates = JSON.parse(data);
+            } catch (error) {
+                console.log('無法讀取 joinDates.json，將創建新檔案');
+            }
+
+            let hasUpdates = false; // 追蹤是否有更新
+            const guilds = await client.guilds.fetch();
+            for (const oguild of guilds.values()) {
+
+		if (oguild.id != "1090912861066362900"){
+			continue;
+		}
+
+		const guild = await oguild.fetch();
+		console.log(guild.id+":"+guild.name);
+                // 尋找「新進勇者」角色
+		    //
+		const roles = await guild.roles.fetch();
+		const newbieRole = roles.find(role => role.name === '新進成員');		    
+                //const newbieRole = guild.roles.cache.find(role => role.name === '新進成員');
+                if (!newbieRole) continue;
+
+
+
+ const senRole = roles.find(role => role.name === '資深成員');		
+
+        const members = await guild.members.fetch();
+        
+        // 過濾有特定身分組的成員
+        const roleMembers = members.filter(member => 
+            member.roles.cache.some(role => role.name === "新進成員")
+        );
+		    
+                for (const member of members.values()) {
+                    const userId = member.id;
+                    const currentJoinTime = member.joinedAt.getTime();
+                    
+                    // 如果目前的加入時間比儲存的更新，則更新記錄
+                    if (!joinDates[userId] || currentJoinTime > joinDates[userId]) {
+                        joinDates[userId] = currentJoinTime;
+                        hasUpdates = true;
+                    }
+
+                    // 使用儲存的時間來判斷角色
+                    const joinedAt = new Date(joinDates[userId]);
+                    const oneYearAgo = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);			
+                    const oneMonthAgo = new Date(Date.now() - 62 * 24 * 60 * 60 * 1000);
+
+                    const isSen = member.roles.cache.some(role => role.name === "資深成員");
+
+                    const isNew = member.roles.cache.some(role => role.name === "新進成員");
+//		    const userid = 558267933470752774;
+
+                    if(!isNew && joinedAt && joinedAt > oneMonthAgo){
+                        console.log("new rejoin:"+member.joinedAt);
+                            await member.roles.add(newbieRole);
+                            console.log(`已新增 ${member.user.tag} 的新進成員角色`);
+
+                    }
+                    // 如果加入時間超過一個月，移除角色
+                    if (joinedAt && !isSen && joinedAt < oneYearAgo) {
+                        console.log("sen join:"+member.joinedAt);			    
+                        await member.roles.add(senRole);
+                        console.log(`已新增 ${member.user.tag} 的資深成員角色`);
+                    }
+                }      
+                // 取得所有具有該角色的成員
+//                const members = newbieRole.members;
+//                console.log(members);
+                // 檢查每個成員的加入時間
+                for (const member of roleMembers.values()) {
+		    console.log("join:"+member.joinedAt);
+                    const joinedAt = member.joinedAt;
+                    const oneMonthAgo = new Date(Date.now() - 62 * 24 * 60 * 60 * 1000);
+                    
+                    // 如果加入時間超過2個月，移除角色
+                    if (joinedAt && joinedAt < oneMonthAgo) {
+                        await member.roles.remove(newbieRole);
+                        console.log(`已移除 ${member.user.tag} 的新進成員角色`);
+                    }
+                }
+            }
+     // 只在有更新時才寫入檔案
+     if (hasUpdates) {
+        await writeFile(
+            new URL('../joinDates.json', import.meta.url),
+            JSON.stringify(joinDates, null, 2)
+        );
+        console.log('已更新加入時間記錄');
+    }
+		console.log("結束檢查");
+        } catch (error) {
+            console.error('檢查新進勇者角色時發生錯誤:', error);
+        }
+
+   
+    }
+
+    // 立即執行一次
+    checkNewbieRoles();
+    
+    // 設定定期檢查
+    setInterval(checkNewbieRoles, 24 * 60 * 60 * 1000);
+
 });
 //https://discord.com/api/oauth2/authorize?client_id=1091073332868300891&permissions=377957320704&scope=bot
 

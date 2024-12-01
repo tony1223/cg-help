@@ -6,12 +6,23 @@ import fs from "fs";
 
 let data = PetDefaultData;
 
-setTimeout(async () => {
-    data = await Parse();
-})
+function pad(data){
+data.push([null, "優奈", null, "15", "25", "33", "19", "33", 0.2])
+data.push([null,"紫燄",null,"41","44","16","16","8",0.2]);
+data.push([null,"青燄",null,16,8,16,41,44,0.2]);
+data.push([null,"蒼燄",null,16,44,16,41,8,0.2]);
+data.push([null,"聖誕大公雞",null,35,6,12,22,50,0.2]);
+data.push([72,"改造水蜘蛛",null,"28","20","21","24","32",0.2]);
+}
+
+setTimeout(async function(){
+   data = await Parse();
+   pad(data);
+});
 setInterval(async function () {
     data = await Parse();
-}, 1000 * 60 * 60 * 4);
+     pad(data);
+}, 1000 * 60 * 60 * 24);
 
 function findOverlap(a, b) {
     if (b == null) {
