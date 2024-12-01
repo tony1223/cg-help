@@ -8,7 +8,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "cg-pet-calc": "^1.0.1",
+    "cg-pet-calc": "^1.0.2",
     "cheerio": "^1.0.0-rc.12",
     "daisyui": "^2.51.5",
     "discord.js": "^14.8.0",

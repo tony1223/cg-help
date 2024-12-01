@@ -22,17 +22,9 @@ function useStateCallback(initialState) {
     return [state, setStateCallback];
 }
 
-import styles from './page.module.css'
-import {RealGuess, GuessResultToString, PetDefaultData} from "cg-pet-calc"
-import {Pts} from "../calcpet/PetData.mjs"
-import {calcDiff, minmax, RealGuessRaw} from "../calcpet/Pets.mjs"
+import {RealGuess, GuessResultToString, PetDefaultData,calcDiff, minmax, RealGuessRaw} from "cg-pet-calc"
 
-function RealGuessRaw(Pts, input) {
-    const token = input.trim().split(/ /);
-    return RealGuess(Pts, token[0], ...token.slice(1).map(n => parseInt(n)));
-}
-
-
+const Pts = PetDefaultData;
 
 export default function Home() {
 
