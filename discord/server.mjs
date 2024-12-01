@@ -1,6 +1,6 @@
 // Initialize dotenv
 // require('dotenv').config();
-import {readFile} from 'fs/promises';
+import {readFile,writeFile} from 'fs/promises';
 
 const config = JSON.parse(
     await readFile(
@@ -118,13 +118,13 @@ client.once('ready', () => {
                 }
             }
      // 只在有更新時才寫入檔案
-     if (hasUpdates) {
-        await writeFile(
-            new URL('../joinDates.json', import.meta.url),
-            JSON.stringify(joinDates, null, 2)
-        );
-        console.log('已更新加入時間記錄');
-    }
+        if (hasUpdates) {
+            await writeFile(
+                new URL('../joinDates.json', import.meta.url),
+                JSON.stringify(joinDates, null, 2)
+            );
+            console.log('已更新加入時間記錄');
+        }
 		console.log("結束檢查");
         } catch (error) {
             console.error('檢查新進勇者角色時發生錯誤:', error);
