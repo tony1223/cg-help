@@ -24,11 +24,15 @@ function useStateCallback(initialState) {
 
 import styles from './page.module.css'
 import {RealGuess, GuessResultToString, PetDefaultData} from "cg-pet-calc"
+import {Pts} from "../calcpet/PetData.mjs"
+import {calcDiff, minmax, RealGuessRaw} from "../calcpet/Pets.mjs"
 
 function RealGuessRaw(Pts, input) {
     const token = input.trim().split(/ /);
     return RealGuess(Pts, token[0], ...token.slice(1).map(n => parseInt(n)));
 }
+
+
 
 export default function Home() {
 
@@ -168,14 +172,16 @@ export default function Home() {
     }
 
     return (
-        <main className={styles.main}>
-            <h1>寵物算檔</h1>
-            <div>
+        <main className="flex flex-col justify-center items-center pt-12 w-full">
+            <h1 className="text-3xl font-bold">寵物算檔</h1>
+            <form className="my-5" onSubmit={(e) => { e.preventDefault() }}>
+                <div className="flex items-center gap-2">
+                    <label className="text-base">搜尋寵物</label>
+                    <input type="text" className="input input-sm input-bordered" value={inputValue} onChange={handleInputChange} />
+                </div>
                 <div>
-                    搜尋寵物
-                    <input type="text" value={inputValue} onChange={handleInputChange}/>
                     {suggestions.length > 0 && (
-                        <ul style={{maxHeight: "100px", overflow: "scroll"}}>
+                        <ul className="max-h-32 overflow-scroll">
                             {suggestions.map((suggestion) => (
                                 <li key={suggestion} onClick={() => handleSuggestionClick(suggestion)}>
                                     {suggestion}
@@ -184,26 +190,21 @@ export default function Home() {
                         </ul>
                     )}
                 </div>
-                <br/>
-                <hr/>
-                <br/>
-                <div>
-                    <h2>計算檔次</h2>
-                    <span>格式: &lt;寵物名稱&gt; &lt;等級&gt; &lt;血&gt; &lt;魔&gt; &lt;攻&gt; &lt;防&gt; &lt;敏&gt;</span>
-                    <br/>
-                    <span>範例: 92 級的粉紅炸彈 血 1500 , 魔 3241 , 攻擊 262,防禦 328 ,魔 300</span>
-                    <br/>
-                    <span>輸入: 粉紅炸彈 92 1500 3241 262 328 300 </span>
-                    <br/>
+                <div class="divider" />
+                <div className="card card-body">
+                    <h2 className="card-title">計算檔次</h2>
+                    <p>格式: &lt;寵物名稱&gt; &lt;等級&gt; &lt;血&gt; &lt;魔&gt; &lt;攻&gt; &lt;防&gt; &lt;敏&gt;</p>
+                    <p>範例: 92 級的粉紅炸彈 血 1500, 魔 3241, 攻擊 262, 防禦 328, 敏 300</p>
+                    <p>輸入: 粉紅炸彈 92 1500 3241 262 328 300 </p>
                 </div>
-                <input style={{width: "400px"}} type="text" value={inputProps} onChange={handleInputProps}/>
-                <button className="calc btn-primary" onClick={calcProps}>計算</button>
-            </div>
-            <br/>
-            <br/>
-            <hr/>
-            <br/>
-            <textarea readOnly style={{minWidth: "50%", height: "400px"}} value={result}/>
+                <div className="flex items-center gap-2">
+                    <input type="text" className="input input-sm input-bordered w-[400px]" value={inputProps} onChange={handleInputProps} />
+                    <button className="btn btn-sm btn-primary" onClick={calcProps}>
+                        計算
+                    </button>
+                </div>
+            </form>
+            <textarea className="mt-8 textarea textarea-bordered h-[400px] min-w-[50%]" readOnly value={result} />
         </main>
     )
 }
