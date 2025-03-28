@@ -153,7 +153,9 @@ async function Parse() {
 
     const custom = [[null, "小可愛優奈", null, "28", "28", "28", "28", "28", 0.2]];
 
-    let allpets = [...pts2, ...custom, ...mappedpet2];
+    const mappedPetNames = new Set(mappedpet2.map(pet => pet[1]));
+    const uniquePts2 = pts2.filter(pet => !mappedPetNames.has(pet[1]));
+    let allpets = [...uniquePts2, ...custom, ...mappedpet2];
     fs.writeFileSync("mergedpets.json",
         JSON.stringify(allpets));
 
