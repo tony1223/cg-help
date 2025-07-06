@@ -217,6 +217,27 @@ client.on("messageCreate", (msg) => {
 
 
 client.on(Events.InteractionCreate, async interaction => {
+    // Handle button interactions
+    if (interaction.isButton()) {
+        // Find commands that have button handlers
+        const buttonHandlers = commands.filter(cmd => cmd.handleButtonInteraction);
+        
+        for (const handler of buttonHandlers) {
+            try {
+                await handler.handleButtonInteraction(interaction);
+            } catch (error) {
+                console.error('Error handling button interaction:', error);
+                if (!interaction.replied && !interaction.deferred) {
+                    await interaction.reply({
+                        content: '處理按鈕時發生錯誤！',
+                        ephemeral: true
+                    });
+                }
+            }
+        }
+        return;
+    }
+
     if (!interaction.isChatInputCommand()) return;
     // console.log("on command", interaction)
     const command = interaction.client.commands.get(interaction.commandName);
