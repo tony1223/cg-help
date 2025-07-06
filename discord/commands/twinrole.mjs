@@ -70,7 +70,7 @@ const TwinRoleCommand = {
 
         try {
             // 查找[雙子]身分組
-            const twinRole = interaction.guild.roles.cache.find(role => role.name === '[雙子]');
+            const twinRole = interaction.guild.roles.cache.find(role => role.name === '雙子');
             
             if (!twinRole) {
                 return await interaction.reply({
