@@ -90,7 +90,7 @@ const TwinRoleCommand = {
 
             if (hasTwin && hasSpeak) {
                 return await interaction.reply({
-                    content: '你已經擁有[雙子]和[法欄發言證]身分組了！',
+                    content: '你已經擁有[雙子]和[法蘭發言證]身分組了！',
                     ephemeral: true
                 });
             }
@@ -104,11 +104,11 @@ const TwinRoleCommand = {
 
             let msg = '成功獲取';
             if (!hasTwin && !hasSpeak) {
-                msg += '[雙子]和[法欄發言證]身分組！';
+                msg += '[雙子]和[法蘭發言證]身分組！';
             } else if (!hasTwin) {
                 msg += '[雙子]身分組！';
             } else if (!hasSpeak) {
-                msg += '[法欄發言證]身分組！';
+                msg += '[法蘭發言證]身分組！';
             }
 
             await interaction.reply({
@@ -117,7 +117,7 @@ const TwinRoleCommand = {
             });
             
         } catch (error) {
-            console.error('授予雙子或法欄發言證身分組時出錯:', error);
+            console.error('授予雙子或法蘭發言證身分組時出錯:', error);
             await interaction.reply({
                 content: '處理請求時發生錯誤！請稍後再試或聯繫管理員。',
                 ephemeral: true
