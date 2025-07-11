@@ -71,20 +71,20 @@ const TwinRoleCommand = {
         try {
             // 查找[雙子]身分組
             const twinRole = interaction.guild.roles.cache.find(role => role.name === '雙子');
-            // 查找[法欄發言證]身分組
-            const speakRole = interaction.guild.roles.cache.find(role => role.name === '法欄發言證');
+            // 查找[法蘭發言證]身分組
+            const speakRole = interaction.guild.roles.cache.find(role => role.name === '法蘭發言證');
             
             if (!twinRole || !speakRole) {
                 let missing = [];
                 if (!twinRole) missing.push('[雙子]');
-                if (!speakRole) missing.push('[法欄發言證]');
+                if (!speakRole) missing.push('[法蘭發言證]');
                 return await interaction.reply({
                     content: `找不到${missing.join('、')}身分組！請聯繫管理員。`,
                     ephemeral: true
                 });
             }
 
-            // 檢查用戶是否已有[雙子]和[法欄發言證]身分組
+            // 檢查用戶是否已有[雙子]和[法蘭發言證]身分組
             const hasTwin = interaction.member.roles.cache.has(twinRole.id);
             const hasSpeak = interaction.member.roles.cache.has(speakRole.id);
 
