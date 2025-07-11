@@ -71,32 +71,53 @@ const TwinRoleCommand = {
         try {
             // 查找[雙子]身分組
             const twinRole = interaction.guild.roles.cache.find(role => role.name === '雙子');
+            // 查找[法欄發言證]身分組
+            const speakRole = interaction.guild.roles.cache.find(role => role.name === '法欄發言證');
             
-            if (!twinRole) {
+            if (!twinRole || !speakRole) {
+                let missing = [];
+                if (!twinRole) missing.push('[雙子]');
+                if (!speakRole) missing.push('[法欄發言證]');
                 return await interaction.reply({
-                    content: '找不到[雙子]身分組！請聯繫管理員。',
+                    content: `找不到${missing.join('、')}身分組！請聯繫管理員。`,
                     ephemeral: true
                 });
             }
 
-            // 檢查用戶是否已有該身分組
-            if (interaction.member.roles.cache.has(twinRole.id)) {
+            // 檢查用戶是否已有[雙子]和[法欄發言證]身分組
+            const hasTwin = interaction.member.roles.cache.has(twinRole.id);
+            const hasSpeak = interaction.member.roles.cache.has(speakRole.id);
+
+            if (hasTwin && hasSpeak) {
                 return await interaction.reply({
-                    content: '你已經擁有[雙子]身分組了！',
+                    content: '你已經擁有[雙子]和[法欄發言證]身分組了！',
                     ephemeral: true
                 });
             }
 
-            // 給用戶添加身分組
-            await interaction.member.roles.add(twinRole);
-            
+            // 要添加的身分組
+            const rolesToAdd = [];
+            if (!hasTwin) rolesToAdd.push(twinRole);
+            if (!hasSpeak) rolesToAdd.push(speakRole);
+
+            await interaction.member.roles.add(rolesToAdd);
+
+            let msg = '成功獲取';
+            if (!hasTwin && !hasSpeak) {
+                msg += '[雙子]和[法欄發言證]身分組！';
+            } else if (!hasTwin) {
+                msg += '[雙子]身分組！';
+            } else if (!hasSpeak) {
+                msg += '[法欄發言證]身分組！';
+            }
+
             await interaction.reply({
-                content: '成功獲取[雙子]身分組！',
+                content: msg,
                 ephemeral: true
             });
             
         } catch (error) {
-            console.error('授予雙子身分組時出錯:', error);
+            console.error('授予雙子或法欄發言證身分組時出錯:', error);
             await interaction.reply({
                 content: '處理請求時發生錯誤！請稍後再試或聯繫管理員。',
                 ephemeral: true
