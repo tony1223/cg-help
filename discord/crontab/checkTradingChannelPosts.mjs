@@ -159,7 +159,7 @@ async function processUserMessages(client, channel, userId, userMessages) {
             for (const message of messagesToDelete) {
                 try {
                     deletedMessageIds.push(message.id);
-                    // await message.delete();
+                    await message.delete();
                     console.log(`已刪除用戶 ${userId} 的訊息: ${message.id}`);
                                         
                     // 添加延遲以避免速率限制
