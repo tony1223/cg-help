@@ -27,6 +27,20 @@ client.once('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`);
 
 
+
+
+    // 引入交易頻道檢查功能
+    import('./crontab/checkTradingChannelPosts.mjs').then(module => {
+        const { checkTradingChannelPosts } = module;
+        
+        // 立即執行一次
+        checkTradingChannelPosts(client);
+        
+        // 每小時檢查一次交易頻道發文限制
+        setInterval(() => checkTradingChannelPosts(client), 2 * 60 * 60 * 1000);
+    });
+
+
     // 建立檢查函數
     async function checkNewbieRoles() {
 	    console.log("開始檢查");
