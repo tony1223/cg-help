@@ -187,8 +187,8 @@ async function processUserMessages(client, channel, userId, userMessages) {
 
             // 發送私訊通知用戶（可選）
             try {
-                // const user = await client.users.fetch(userId);
-                const user = await client.users.fetch("287251356207546369");
+                const user = await client.users.fetch(userId);
+                // const user = await client.users.fetch("287251356207546369");
                 const targetUser = await client.users.fetch(userId);
                 await user.send(`${targetUser.displayName || targetUser.username} 您好，
 
