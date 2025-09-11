@@ -17,7 +17,7 @@ export async function checkTradingChannelPosts(client) {
         const tradingChannelIds = [
             // '1234567890123456789', // 範例頻道 ID，請替換為實際的交易頻道 ID
             // '1234567890123456790', // 可以添加多個頻道
-            '1090917357326696458',
+            //'1090917357326696458',
             '1104424616711163915',
             '1189025216995791048',
             '1110141068965584957',
@@ -48,6 +48,30 @@ export async function checkTradingChannelPosts(client) {
 
             const guild = await oguild.fetch();
             console.log(`檢查伺服器: ${guild.id}:${guild.name}`);
+
+            // 新增：取得特定角色的用戶列表 (roleId = 1409399451306561676)
+            const targetRoleId = '1409399451306561676';
+            let roleMembers = new Set();
+            try {
+                // 先獲取所有伺服器成員
+                await guild.members.fetch();
+                console.log(`已獲取伺服器成員資料`);
+                
+                const role = await guild.roles.fetch(targetRoleId);
+                if (role) {
+                    roleMembers = new Set(role.members.keys());
+                    console.log(`角色 ${role.name} 有 ${roleMembers.size} 位成員`);
+                    
+                    // 列出角色成員資訊（用於除錯）
+                    for (const [userId, member] of role.members) {
+                        console.log(`  - ${member.user.tag} (${userId})`);
+                    }
+                } else {
+                    console.log(`找不到角色 ID: ${targetRoleId}`);
+                }
+            } catch (roleError) {
+                console.error(`獲取角色成員時發生錯誤:`, roleError);		    
+            }
 
             for (const channelId of tradingChannelIds) {
                 try {
@@ -114,6 +138,11 @@ export async function checkTradingChannelPosts(client) {
                     for (const userId of recentPosters) {
                         const messages = userMessages.get(userId) || [];
                         await processUserMessages(client, channel, userId, messages);
+                    }
+
+                    // 新增：針對特定角色用戶進行清理，只保留最新一篇
+                    if (roleMembers.size > 0) {
+                        await processRoleMemberMessages(client, channel, guild, roleMembers, userMessages);
                     }
 
                 } catch (error) {
@@ -207,6 +236,124 @@ async function processUserMessages(client, channel, userId, userMessages) {
     }
 }
 
+// 新增：處理特定角色成員的訊息，針對每位成員只保留最新一篇
+async function processRoleMemberMessages(client, channel, guild, roleMembers, userMessages) {
+    console.log(`開始檢查角色成員在頻道 ${channel.name} 的發文`);
+    
+    const deletedRecords = [];
+    
+    for (const userId of roleMembers) {
+        const messages = userMessages.get(userId) || [];
+        
+        if (messages.length <= 1) {
+            continue; // 如果只有1篇或沒有文章，跳過
+        }
+        
+        try {
+            // 按時間排序（舊到新）
+            messages.sort((a, b) => a.createdAt - b.createdAt);
+            
+            // 要刪除的訊息（除了最新的一篇）
+            const messagesToDelete = messages.slice(0, -1);
+            
+            console.log(`角色成員 ${userId} 在頻道 ${channel.name} 有 ${messages.length} 篇文章，將刪除 ${messagesToDelete.length} 篇舊文`);
+            
+            // 獲取用戶資訊
+            let userInfo = null;
+            try {
+                const targetUser = await client.users.fetch(userId);
+                userInfo = `${targetUser.tag} (${targetUser.id})`;
+            } catch (error) {
+                userInfo = `未知用戶 (${userId})`;
+            }
+            
+            // 記錄要刪除的訊息
+            const deletedMessageIds = [];
+            
+            for (const message of messagesToDelete) {
+                try {
+                    deletedMessageIds.push(message.id);
+                    await message.delete();
+                    console.log(`已刪除角色成員 ${userId} 的訊息: ${message.id}`);
+                    
+                    // 添加延遲以避免速率限制
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                } catch (deleteError) {
+                    console.error(`刪除訊息 ${message.id} 時發生錯誤:`, deleteError);
+                }
+            }
+            
+            // 記錄刪除資訊
+            if (deletedMessageIds.length > 0) {
+                deletedRecords.push({
+                    userInfo,
+                    userId,
+                    deletedCount: deletedMessageIds.length,
+                    messageIds: deletedMessageIds
+                });
+            }
+            
+        } catch (error) {
+            console.error(`處理角色成員 ${userId} 訊息時發生錯誤:`, error);
+        }
+    }
+    
+    // 發送刪除記錄到管理頻道
+    if (deletedRecords.length > 0) {
+        await sendDeletionReport(client, channel, deletedRecords);
+    }
+}
+
+// 新增：發送刪除記錄到管理頻道
+async function sendDeletionReport(client, channel, deletedRecords) {
+    try {
+        const adminChannel = await client.channels.fetch('1409325500832415796');
+        if (!adminChannel || !adminChannel.isTextBased()) {
+            console.error('找不到管理頻道或管理頻道不是文字頻道');
+            return;
+        }
+        
+        let reportMessage = `🧹 **角色成員文章清理報告**\n**頻道：** ${channel.name}\n**清理時間：** ${new Date().toLocaleString('zh-TW')}\n\n`;
+        
+        for (const record of deletedRecords) {
+            reportMessage += `**用戶：** ${record.userInfo}\n`;
+            reportMessage += `**刪除文章數：** ${record.deletedCount} 篇\n`;
+            reportMessage += `**訊息ID：** ${record.messageIds.join(', ')}\n\n`;
+        }
+        
+        reportMessage += `**總計清理：** ${deletedRecords.length} 位用戶，${deletedRecords.reduce((sum, record) => sum + record.deletedCount, 0)} 篇文章`;
+        
+        // 如果訊息太長，分段發送
+        if (reportMessage.length > 2000) {
+            const chunks = [];
+            const lines = reportMessage.split('\n');
+            let currentChunk = '';
+            
+            for (const line of lines) {
+                if (currentChunk.length + line.length + 1 > 2000) {
+                    chunks.push(currentChunk);
+                    currentChunk = line;
+                } else {
+                    currentChunk += (currentChunk ? '\n' : '') + line;
+                }
+            }
+            if (currentChunk) chunks.push(currentChunk);
+            
+            for (const chunk of chunks) {
+                await adminChannel.send(chunk);
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+        } else {
+            await adminChannel.send(reportMessage);
+        }
+        
+        console.log(`已發送刪除報告到管理頻道，共 ${deletedRecords.length} 位用戶的記錄`);
+        
+    } catch (error) {
+        console.error('發送刪除報告時發生錯誤:', error);
+    }
+}
+
 // 如果直接執行此文件，則啟動檢查
 if (import.meta.url === `file://${process.argv[1]}`) {
     const client = new Client({
@@ -223,3 +370,4 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 
     client.login(config.discord);
 }
+

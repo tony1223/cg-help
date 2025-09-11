@@ -37,7 +37,7 @@ client.once('ready', () => {
         checkTradingChannelPosts(client);
         
         // 每小時檢查一次交易頻道發文限制
-        setInterval(() => checkTradingChannelPosts(client), 2 * 60 * 60 * 1000);
+        setInterval(() => checkTradingChannelPosts(client), 60 * 60 * 1000);
     });
 
 
