@@ -15,3 +15,10 @@ dist/main.js
 mergedpets.json
 spetdata.ini
 config/pet-data.json
+
+# regression test transient output (cases.json + pets-discovered.json are tracked as fixtures)
+test/fixtures/raw-messages.json
+test/fixtures/regression-report.json
+test/fixtures/regression-progress.json
+test/fixtures/bench.json
+test/fixtures/*.log
