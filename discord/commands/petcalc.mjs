@@ -2,7 +2,15 @@ import {SlashCommandBuilder} from "discord.js";
 import {RealGuess, GuessResultToString, PetDefaultData} from "cg-pet-calc"
 import {Parse} from "../../src/data/parse.mjs"
 import fs from "fs";
-import petConfig from '../../config/pet-data.json' assert { type: "json" };
+import {readFile} from 'fs/promises';
+
+// 跟其他 command 一樣用 readFile 載設定 —— import assertion 的 `assert` 語法
+// 在 Node 22 已經移除（換成 `with`），這支是全專案唯一還在用的。
+const petConfig = JSON.parse(
+    await readFile(
+        new URL('../../config/pet-data.json', import.meta.url)
+    )
+);
 
 let data = PetDefaultData;
 
