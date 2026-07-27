@@ -121,8 +121,13 @@ const PetCalcCommand = {
             }
 
             const petName = tokens[0];
+            // auto：精確比對的兩階先跑完，全空了才升級到「噬生・魔物觀測者」的容差
+            // 規則。算得出來的照舊，只有原本無解的高等野寵會被容差接住 —— 拿 1000 筆
+            // 歷史案例量過，輸出只有 0.1% 會變。
+            // （直接開 observer 是 77%，而且會把精確解換成模糊解，別用。）
+            // notorderpoint / targetGrow 留空走預設。
             const results = RealGuess(data, petName,
-                lvl, ...params);
+                lvl, ...params, undefined, undefined, {mode: 'auto'});
 
             logResult.results = results;
 
