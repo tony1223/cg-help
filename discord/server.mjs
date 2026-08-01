@@ -135,14 +135,18 @@ client.once('ready', () => {
 
     // 立即執行一次
     checkNewbieRoles();
-    
+
     // 設定定期檢查
     setInterval(checkNewbieRoles, 24 * 60 * 60 * 1000);
+
+    // 攻略站「回報錯誤」端點（config.report 沒設定就不會啟動）
+    startReportServer(client, config);
 
 });
 //https://discord.com/api/oauth2/authorize?client_id=1091073332868300891&permissions=377957320704&scope=bot
 
 import {commands} from "./commands.mjs"
+import {startReportServer} from "./report-server.mjs"
 
 client.commands = new Collection();
 

@@ -51,6 +51,26 @@ https://discord.com/developers/applications
 
     node discord/server.mjs
 
+### 攻略站錯誤回報端點
+
+攻略站（https://cg-originmood-dc.github.io/）的「回報錯誤」表單會 POST 到
+bot 主機，由 bot 轉發到指定頻道（程式在 discord/report-server.mjs）。
+config.json 加上：
+
+    "report": {
+      "channel_id": "<接收回報的頻道 ID>",
+      "port": 8377,
+      "allow_origins": ["https://cg-originmood-dc.github.io"]
+    }
+
+沒設定 report 就不會開這個端點。對外需走 HTTPS（攻略站是 https，
+混合內容會被瀏覽器擋），用 cloudflared 或既有反向代理皆可，快速測試：
+
+    cloudflared tunnel --url http://localhost:8377
+
+正式環境建議掛固定網域（named tunnel 或反代）。網址確定後，到攻略站
+repo 把 src/components/ReportIssue.astro 的 REPORT_ENDPOINT 填上即生效。
+
 也歡迎大家加入永恆初心玩家DC
 https://discord.com/channels/1090912861066362900/1090912861066362902
 
