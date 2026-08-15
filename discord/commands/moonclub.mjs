@@ -240,14 +240,14 @@ const MoonClubCommand = {
             .addStringOption((o) => o
                 .setName('角色').setDescription('角色名稱或縮寫').setRequired(true)))
         .addSubcommand((s) => s
-            .setName('面板')
-            .setDescription('（管理員）在頻道張貼常駐的查詢面板')),
+            .setName('開始')
+            .setDescription('（管理員）在頻道張貼參加面板，大家按按鈕就能登記')),
 
     async execute(interaction) {
         const sub = interaction.options.getSubcommand();
         const uid = interaction.user.id;
 
-        if (sub === '面板') return panel(interaction);
+        if (sub === '開始') return panel(interaction);
 
         await interaction.deferReply({ephemeral: true});
 
@@ -437,7 +437,13 @@ const ambiguous = (found) => found.length === 0
 async function panel(interaction) {
     const allowed = interaction.member?.permissions?.has(PermissionFlagsBits.ManageMessages);
     if (!allowed) {
-        return interaction.reply({content: '這個指令只有管理員能用。', ephemeral: true});
+        // 一般人多半是想自己參加，別只丟一句「你沒權限」就算了
+        return interaction.reply({
+            content: '這是管理員用來張貼面板的指令。\n'
+                + `你要參加的話，按 <#${CHANNEL_ID}> 裡的 [開始參加] 按鈕，`
+                + '或直接用 `/月亮 登記 角色:<名字>`。',
+            ephemeral: true,
+        });
     }
     const channel = await interaction.client.channels.fetch(CHANNEL_ID);
     await channel.send({
