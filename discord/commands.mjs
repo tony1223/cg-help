@@ -5,6 +5,7 @@ import {MapRegCommand} from "./commands/mapreg.mjs"
 import {MissionCommand} from "./commands/mission.mjs"
 import {MissionRegCommand} from "./commands/missionreg.mjs"
 import {TwinRoleCommand} from "./commands/twinrole.mjs"
+import {MoonClubCommand} from "./commands/moonclub.mjs"
 
 const commands = [
     PetCalcCommand,
@@ -13,6 +14,7 @@ const commands = [
     AskGptCommand,
     MapCommand,
     MapRegCommand,
-    TwinRoleCommand
+    TwinRoleCommand,
+    MoonClubCommand
 ]
 export {commands};

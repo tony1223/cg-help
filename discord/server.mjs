@@ -142,11 +142,15 @@ client.once('ready', () => {
     // 攻略站「回報錯誤」端點（config.report 沒設定就不會啟動）
     startReportServer(client, config);
 
+    // 月亮俱樂部每 24 小時的對話提醒
+    startMoonClubReminder(client);
+
 });
 //https://discord.com/api/oauth2/authorize?client_id=1091073332868300891&permissions=377957320704&scope=bot
 
 import {commands} from "./commands.mjs"
 import {startReportServer} from "./report-server.mjs"
+import {startMoonClubReminder} from "./commands/moonclub.mjs"
 
 client.commands = new Collection();
 
@@ -234,6 +238,26 @@ client.on(Events.InteractionCreate, async interaction => {
                 if (!interaction.replied && !interaction.deferred) {
                     await interaction.reply({
                         content: '處理按鈕時發生錯誤！',
+                        ephemeral: true
+                    });
+                }
+            }
+        }
+        return;
+    }
+
+    // Handle modal submissions (跟按鈕一樣廣播給所有有處理器的指令，各自比對 customId)
+    if (interaction.isModalSubmit()) {
+        const modalHandlers = commands.filter(cmd => cmd.handleModalSubmit);
+
+        for (const handler of modalHandlers) {
+            try {
+                await handler.handleModalSubmit(interaction);
+            } catch (error) {
+                console.error('Error handling modal submit:', error);
+                if (!interaction.replied && !interaction.deferred) {
+                    await interaction.reply({
+                        content: '處理表單時發生錯誤！',
                         ephemeral: true
                     });
                 }
