@@ -46,10 +46,43 @@ https://discord.com/developers/applications
 
 1. 提供 /掉檔 <寵物名稱 等級 血 魔 攻 防 敏> 計算寵物檔次
 2. 提供 /閒聊 會有 chatgpt 模擬的阿蒙陪你嘴砲，如果不啟用 /閒聊 指令，gpt_token 設定可以不給。
+3. 提供 /查詢 <寵物名稱> 查檔次、屬性與技能，資料讀攻略站（見下節）。
 
 啟動方式
 
     node discord/server.mjs
+
+### /查詢 的寵物資料
+
+資料在攻略站那個 repo（content/data/專屬寵物.csv、魔力原始寵物.csv，圖片網址
+反查 content/images.json），不複製一份到這裡。所以 bot 主機上要有攻略站的
+checkout。
+
+預設找 cg-help 隔壁的 `../goodluck`，放別的地方就在 config.json 指路：
+
+    "goodluck_path": "/srv/goodluck"
+
+找不到的話 /查詢 會回一句「沒設定」，其他指令不受影響。
+
+#### 定期同步
+
+bot 開機時、之後每 4 小時，會對那個 checkout 做一次 `git pull --ff-only`，
+讓資料跟網站同一版。CSV 的 mtime 一變，下一次查詢就自動重讀，不用重啟。
+
+只做 fast-forward，而且**工作區有未提交的變更就整個跳過** —— 如果那份
+checkout 同時是有人在編攻略站的地方，bot 不會去動人家寫到一半的東西
+（這種時候 log 會寫「跳過：工作區有 N 個未提交的變更」）。拉不動就繼續用
+手上那份舊資料，只記 log，不影響其他指令。
+
+改頻率或關掉：
+
+    "goodluck_sync_hours": 4,
+    "goodluck_sync": false
+
+卡片最後那行「攻略站詳細資料」連到 https://cg-originmood-dc.github.io，
+換網域的話：
+
+    "goodluck_site": "https://example.com"
 
 ### 攻略站錯誤回報端點
 

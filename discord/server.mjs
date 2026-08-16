@@ -145,12 +145,16 @@ client.once('ready', () => {
     // 月亮俱樂部每 24 小時的對話提醒
     startMoonClubReminder(client);
 
+    // /查詢 讀的是攻略站 checkout，定期 git pull 讓它跟網站同一版
+    startGoodluckSync(config);
+
 });
 //https://discord.com/api/oauth2/authorize?client_id=1091073332868300891&permissions=377957320704&scope=bot
 
 import {commands} from "./commands.mjs"
 import {startReportServer} from "./report-server.mjs"
 import {startMoonClubReminder} from "./commands/moonclub.mjs"
+import {startGoodluckSync} from "../src/data/goodluck.mjs"
 
 client.commands = new Collection();
 
@@ -262,6 +266,20 @@ client.on(Events.InteractionCreate, async interaction => {
                     });
                 }
             }
+        }
+        return;
+    }
+
+    // 自動完成。跟按鈕／表單不同，這個 interaction 自己帶 commandName，
+    // 直接派給那一支就好，不用廣播。三秒沒回 Discord 就當逾時，
+    // 所以錯誤只記 log —— 這裡再 reply 一次只會拿到 Unknown interaction。
+    if (interaction.isAutocomplete()) {
+        const command = interaction.client.commands.get(interaction.commandName);
+        if (!command?.autocomplete) return;
+        try {
+            await command.autocomplete(interaction);
+        } catch (error) {
+            console.error(`autocomplete ${interaction.commandName} 出錯:`, error);
         }
         return;
     }
