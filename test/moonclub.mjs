@@ -18,7 +18,8 @@ import path from 'path';
 const DATA_DIR = await mkdtemp(path.join(tmpdir(), 'moonclub-test-'));
 process.env.CG_DATA_DIR = DATA_DIR;
 
-const {MoonClubCommand, moonClubTick} = await import('../discord/commands/moonclub.mjs');
+const {MoonClubCommand, moonClubTick, gamePeriod, npcsAt} =
+    await import('../discord/commands/moonclub.mjs');
 
 const STORE = path.join(DATA_DIR, 'moonclub.json');
 const realNow = Date.now;
@@ -277,6 +278,210 @@ test('別人的角色按不動', async () => {
 test('已取消的登記按下去不會炸', async () => {
     const r = await click('moon:done:nonexistent');
     assert.match(text(r), /找不到這個登記/);
+});
+
+// ---------------------------------------------------------------- 遊戲內時段
+//
+// 這一組是整支程式最不能猜的部分：報錯時段會叫人去找一個不在的 NPC，
+// 白跑一趟就是斷一天，97 天重來。對照表出自攻略站 魔力豆知識。
+
+const periodAt = (s) => gamePeriod(TW(s));
+const clockOf = (ts) => new Date(ts + 8 * HOUR).toISOString().slice(11, 16);
+const ALL_NPC = ['肯', '百合', '聖子', '鐵虎'];
+
+test('時段邊界：白天偶 02~46、黃昏偶 47~奇 01、晚上奇 02~46、清晨奇 47~偶 01', () => {
+    const cases = [
+        ['12:02', '白天'], ['12:30', '白天'], ['12:46', '白天'],
+        ['12:47', '黃昏'], ['13:00', '黃昏'], ['13:01', '黃昏'],
+        ['13:02', '晚上'], ['13:30', '晚上'], ['13:46', '晚上'],
+        ['13:47', '清晨'], ['14:00', '清晨'], ['14:01', '清晨'],
+        ['14:02', '白天'],
+    ];
+    for (const [hm, want] of cases) {
+        assert.equal(periodAt(`2026-08-15T${hm}:00`).name, want, `${hm} 應該是${want}`);
+    }
+});
+
+test('四段剛好鋪滿兩小時，沒有縫也沒有重疊', () => {
+    const count = {};
+    for (let m = 0; m < 120; m++) {
+        const p = gamePeriod(TW('2026-08-15T12:00:00') + m * 60000);
+        count[p.name] = (count[p.name] ?? 0) + 1;
+    }
+    // 白天／晚上各 45 分，黃昏／清晨各 15 分 —— 四段「不等長」是這套的重點
+    assert.deepEqual(count, {白天: 45, 黃昏: 15, 晚上: 45, 清晨: 15});
+});
+
+test('算得出這一段何時結束、下一段是什麼', () => {
+    const p = periodAt('2026-08-15T12:30:00');
+    assert.equal(p.name, '白天');
+    assert.equal(clockOf(p.endsAt), '12:47');
+    assert.equal(p.next.name, '黃昏');
+
+    // 清晨跨過整點，結束時間會落在下一個偶數小時
+    const dawn = periodAt('2026-08-15T13:50:00');
+    assert.equal(dawn.name, '清晨');
+    assert.equal(clockOf(dawn.endsAt), '14:02');
+    assert.equal(dawn.next.name, '白天');
+});
+
+test('對得上巴哈那篇的實例（17:15 是晚上、聖子要等清晨、鐵虎要等白天）', () => {
+    // https://forum.gamer.com.tw/G2.php?bsn=2577&sn=10057
+    // 該篇把 :47 口語講成 :45，時段判定以攻略站的對照表為準
+    assert.equal(periodAt('2026-08-15T17:15:00').name, '晚上');
+    assert.ok(!npcsAt('晚上').includes('聖子'), '晚上聖子不理人，這是該篇的前提');
+
+    assert.equal(periodAt('2026-08-15T17:47:00').name, '清晨');
+    assert.ok(npcsAt('清晨').includes('聖子'), '清晨才找得到聖子');
+
+    assert.equal(periodAt('2026-08-15T18:02:00').name, '白天');
+    assert.ok(npcsAt('白天').includes('鐵虎'), '換到白天鐵虎就補上了');
+});
+
+test('任何時段都剛好三個人在，四個人各缺席一段', () => {
+    for (const name of ['白天', '黃昏', '晚上', '清晨']) {
+        assert.equal(npcsAt(name).length, 3, `${name} 應該剛好三個人可對話`);
+    }
+    const absent = ['白天', '黃昏', '晚上', '清晨']
+        .map((n) => ALL_NPC.find((x) => !npcsAt(n).includes(x)));
+    assert.deepEqual([...absent].sort(), [...ALL_NPC].sort(), '每個人該剛好缺席一段');
+});
+
+test('「缺的那位下一段就找得到」—— 提醒是這樣寫的，那就得是真的', () => {
+    for (let m = 0; m < 120; m++) {
+        const p = gamePeriod(TW('2026-08-15T12:00:00') + m * 60000);
+        const missing = ALL_NPC.find((x) => !npcsAt(p.name).includes(x));
+        assert.ok(npcsAt(p.next.name).includes(missing),
+            `${p.name} 缺 ${missing}，但下一段 ${p.next.name} 也沒有他`);
+    }
+});
+
+test('提醒會附上現在能找誰、缺的那位幾點補上', async () => {
+    setClock('2026-08-15T12:30:00');            // 白天
+    const name = uniq();
+    await run({sub: '登記', opts: {角色: name, 剛對話過: false}, userId: 'UT1'});
+
+    sent.length = 0;
+    await moonClubTick(fakeClient);
+
+    const body = text(sentFor('UT1')[0]);
+    assert.match(body, /現在是 \*\*白天\*\*（到 12:47）/);
+    assert.match(body, /可找 百合、聖子、鐵虎/);
+    assert.match(body, /肯不在，12:47 進入 \*\*黃昏\*\* 後就找得到/);
+});
+
+test('提醒落在不同時段就換一組人', async () => {
+    setClock('2026-08-15T13:30:00');            // 晚上
+    const name = uniq();
+    await run({sub: '登記', opts: {角色: name, 剛對話過: false}, userId: 'UT2'});
+
+    sent.length = 0;
+    await moonClubTick(fakeClient);
+
+    const body = text(sentFor('UT2')[0]);
+    assert.match(body, /現在是 \*\*晚上\*\*（到 13:47）/);
+    assert.match(body, /可找 肯、百合、鐵虎/);
+    assert.match(body, /聖子不在，13:47 進入 \*\*清晨\*\* 後就找得到/);
+});
+
+// ---------------------------------------------------------------- 報到訊息
+
+test('報到後在頻道公開留一則，讓大家知道他還在跑', async () => {
+    setClock('2026-08-15T12:00:00');
+    const name = uniq();
+    await run({sub: '登記', opts: {角色: name, 進度: 5}, userId: 'UCI1'});
+    const c = await find(name);
+
+    advance(DAY);
+    sent.length = 0;
+    const r = await click(`moon:done:${c.id}`, 'UCI1');
+
+    // 給本人的細節仍然是暗的，只有他自己看得到
+    assert.equal(r.ephemeral, true);
+
+    const [msg, ...rest] = sentFor('UCI1');
+    assert.ok(msg, '頻道上沒有留下報到訊息 —— 這樣看起來就像沒人回應提醒');
+    assert.equal(rest.length, 0, '一次報到只該發一則');
+    assert.match(msg.content, new RegExp(`${name}.*第 6/97 天`));
+    assert.match(msg.content, /報到/);
+});
+
+test('報到訊息不 ping 當事人 —— 他剛按完按鈕，不用再戳一次', async () => {
+    const name = uniq();
+    await run({sub: '登記', opts: {角色: name}, userId: 'UCI2'});
+    const c = await find(name);
+
+    advance(DAY);
+    sent.length = 0;
+    await click(`moon:done:${c.id}`, 'UCI2');
+
+    const [msg] = sentFor('UCI2');
+    assert.deepEqual(msg.allowedMentions, {parse: []},
+        '沒關掉 mention 的話每天報到都會多戳自己一下');
+});
+
+test('報到剛好踩到里程碑就順便公告今天要做什麼', async () => {
+    const name = uniq();
+    await run({sub: '登記', opts: {角色: name, 進度: 13}, userId: 'UCI3'});
+    const c = await find(name);
+
+    advance(DAY);
+    sent.length = 0;
+    await click(`moon:done:${c.id}`, 'UCI3');
+
+    // 進到第 14 天 = MILESTONES[14]，是「今天」該做的事，不是預告
+    const [msg] = sentFor('UCI3');
+    assert.match(msg.content, /第 14\/97 天/);
+    assert.match(msg.content, /月之戒指/);
+});
+
+test('沒解成功就沒有報到訊息 —— 擋下來的、別人按的都不算', async () => {
+    const name = uniq();
+    await run({sub: '登記', opts: {角色: name}, userId: 'UCI4'});
+    const c = await find(name);
+
+    sent.length = 0;
+    await click(`moon:done:${c.id}`, 'UCI4');          // 不滿 24 小時，被擋
+    assert.equal(sentFor('UCI4').length, 0, '被擋下來還發報到，等於幫他造假出席');
+
+    await click(`moon:done:${c.id}`, 'UCI5');          // 不是本人
+    assert.equal(sent.length, 0, '別人按了也不該掛在當事人頭上');
+
+    await click(`moon:notyet:${c.id}`, 'UCI4');        // 「其實今天還沒對話」
+    assert.equal(sentFor('UCI4').length, 0, '這是說還沒解，不是報到');
+});
+
+test('走完 97 天的那一則是公開的完成宣告', async () => {
+    const name = uniq();
+    await run({sub: '登記', opts: {角色: name, 進度: 96}, userId: 'UCI6'});
+    const c = await find(name);
+
+    advance(DAY);
+    sent.length = 0;
+    await click(`moon:done:${c.id}`, 'UCI6');
+
+    const [msg] = sentFor('UCI6');
+    assert.match(msg.content, /🎉/);
+    assert.match(msg.content, /完成/);
+    assert.ok(!msg.content.includes('📌'), '都完成了就不用再提示今天要做什麼');
+});
+
+test('報到訊息發不出去也不能影響進度 —— 記錄早就存好了', async () => {
+    const name = uniq();
+    await run({sub: '登記', opts: {角色: name, 進度: 20}, userId: 'UCI7'});
+    const c = await find(name);
+
+    advance(DAY);
+    const broken = fakeChannel.send;
+    fakeChannel.send = async () => { throw new Error('頻道爆炸'); };
+    try {
+        const r = await click(`moon:done:${c.id}`, 'UCI7');
+        assert.match(text(r), /第 21\/97 天/, '本人還是要收到確認');
+    } finally {
+        fakeChannel.send = broken;
+    }
+
+    assert.equal((await find(name)).day, 21, '廣播失敗把進度吃掉了');
 });
 
 // ---------------------------------------------------------------- 提醒排程

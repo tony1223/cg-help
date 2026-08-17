@@ -87,6 +87,7 @@ const newId = () => (Date.now().toString(36) + (seq++).toString(36)).slice(-9);
 
 const twDate = (ts) => new Date(ts + TZ);
 const fmt = (ts) => twDate(ts).toISOString().slice(5, 16).replace('T', ' ');
+const hhmm = (ts) => twDate(ts).toISOString().slice(11, 16);
 
 function human(ms) {
     const m = Math.round(Math.abs(ms) / 60000);
@@ -109,6 +110,82 @@ function applyQuiet(ts, nightOk) {
 const readyAt = (c) => c.lastDone + DAY;                       // 遊戲裡最早可以再對話的時間
 const remindAt = (c) => applyQuiet(
     c.remindCount === 0 ? readyAt(c) : c.lastRemindAt + DAY, c.nightOk);
+
+// ---------------------------------------------------------------- 遊戲內時段
+//
+// 遊戲一天 = 現實兩小時，切成四段。四段「長度不一樣」，這點很容易搞錯：
+//
+//   ☀️ 白天  偶數時 02 分 ～ 偶數時 46 分   45 分
+//   🌆 黃昏  偶數時 47 分 ～ 奇數時 01 分   15 分
+//   🌙 晚上  奇數時 02 分 ～ 奇數時 46 分   45 分
+//   🌅 清晨  奇數時 47 分 ～ 偶數時 01 分   15 分
+//                                        合計 120 分
+//
+// 對照表出自攻略站 content/pages/魔力豆知識.md，跟巴哈 bsn=2577&sn=10057
+// 那篇月亮俱樂部心得裡的實例對得上（該篇把 :47 的換段口語講成 :45，
+// 遊戲端本來就有一兩分鐘誤差，邊界時間一律以遊戲內顯示為準）。
+//
+// 邊界用「兩小時循環裡的第幾分鐘」表示，0 = 偶數整點。清晨跨過 120 回到 0，
+// 所以它的區間寫成 [107, 122)，判斷時把小的分鐘數 +120 再比。
+const PERIODS = [
+    {name: '白天', emoji: '☀️', from: 2, to: 47},
+    {name: '黃昏', emoji: '🌆', from: 47, to: 62},
+    {name: '晚上', emoji: '🌙', from: 62, to: 107},
+    {name: '清晨', emoji: '🌅', from: 107, to: 122},
+];
+
+// 四位公關各有「一個」時段不出現，所以任何時候都剛好三個人可以對話，
+// 缺的那位必定在下一個時段補上 —— 想一次解完四個就得跨過一次換段。
+const NPCS = [
+    {name: '肯', off: '白天'},
+    {name: '百合', off: '黃昏'},
+    {name: '聖子', off: '晚上'},
+    {name: '鐵虎', off: '清晨'},
+];
+
+export const npcsAt = (period) => NPCS.filter((n) => n.off !== period).map((n) => n.name);
+const npcMissingAt = (period) => NPCS.find((n) => n.off === period)?.name;
+
+// 面板上那張對照表的時間欄，例如「偶數 02～46 分」
+const clockLabel = (m) => `${m < 60 ? '偶數' : '奇數'} ${String(m % 60).padStart(2, '0')} 分`;
+const periodClock = (p) => `${clockLabel(p.from)}～${clockLabel((p.to - 1) % 120)}`;
+
+/** 現在是兩小時循環裡的第幾分鐘（0 = 偶數整點） */
+function cycleMinute(ts) {
+    const d = twDate(ts);
+    return (d.getUTCHours() % 2) * 60 + d.getUTCMinutes();
+}
+
+/** 現在的遊戲時段，附這一段何時結束、下一段是什麼 */
+export function gamePeriod(ts = Date.now()) {
+    const m = cycleMinute(ts);
+    const idx = PERIODS.findIndex((p) => {
+        const mm = m < p.from ? m + 120 : m;
+        return mm >= p.from && mm < p.to;
+    });
+    const p = PERIODS[idx];
+    const mm = m < p.from ? m + 120 : m;
+    const endsAt = ts - (ts % 60000) + (p.to - mm) * 60000;
+    return {...p, endsAt, next: PERIODS[(idx + 1) % PERIODS.length]};
+}
+
+/**
+ * 提醒時附的那兩行：現在能找誰、缺的那位什麼時候補上。
+ * 這是提醒裡最有用的部分 —— 知道「該去解了」還得自己翻時段表，等於沒說完。
+ */
+function periodHint(ts = Date.now()) {
+    const p = gamePeriod(ts);
+    return [
+        `${p.emoji} 現在是 **${p.name}**（到 ${hhmm(p.endsAt)}），可找 ${npcsAt(p.name).join('、')}`,
+        `　${npcMissingAt(p.name)}不在，${hhmm(p.endsAt)} 進入 **${p.next.name}** 後就找得到`,
+    ].join('\n');
+}
+
+// embed footer 不吃 markdown，壓成一行純文字
+const periodFooter = (ts = Date.now()) => {
+    const p = gamePeriod(ts);
+    return `${p.emoji} 現在是${p.name}（到 ${hhmm(p.endsAt)}）　可找 ${npcsAt(p.name).join('、')}`;
+};
 
 // ---------------------------------------------------------------- 顯示
 
@@ -191,6 +268,38 @@ const registeredReply = (c, justDone) => ({
         ? [new ActionRowBuilder().addComponents(notYetButton(c))]
         : buttonRows([c]),
 });
+
+/**
+ * 報到訊息 —— 公開發在同好會頻道。
+ *
+ * 提醒本來就是公開 @ 人的，但「我解完了」只回給本人看，所以頻道上看起來
+ * 就是一整排沒人回應的催促，像大家都棄坑了。這則補上另一半：誰還在跑，
+ * 跑到第幾天，大家看得到。
+ *
+ * 不 ping 任何人 —— 當事人剛按完按鈕，不需要再被戳一次。
+ * 發不出去也只記 log：進度在這之前就已經存好了，不該因為一則廣播失敗
+ * 讓使用者以為沒記到，更不該冒到按鈕處理器外面（那邊會想再回一次 reply，
+ * 但這個互動已經回過了）。
+ */
+async function announceCheckIn(client, c) {
+    const done = c.day >= TOTAL_DAYS;
+    // 增加後的 c.day 就是「剛解完的那一天」，MILESTONES[c.day] 是今天該做的事
+    const today = done ? null : MILESTONES[c.day];
+    try {
+        const channel = await client.channels.fetch(CHANNEL_ID);
+        await channel.send({
+            content: [
+                done
+                    ? `🎉 <@${c.userId}> 的 **${c.name}** 走完 ${TOTAL_DAYS} 天，月亮俱樂部完成！`
+                    : `🌙 <@${c.userId}> 的 **${c.name}** 報到，第 ${c.day}/${TOTAL_DAYS} 天`,
+                today ? `　📌 ${today}` : null,
+            ].filter(Boolean).join('\n'),
+            allowedMentions: {parse: []},
+        });
+    } catch (e) {
+        console.error('[月亮] 報到訊息發送失敗:', e.message);
+    }
+}
 
 // 名字可以只打縮寫：先找完全相同，再找開頭相符，最後找有包含的
 function match(userId, query) {
@@ -275,6 +384,7 @@ const MoonClubCommand = {
                 embeds: [new EmbedBuilder()
                     .setTitle(`🌙 你的月亮俱樂部進度（${list.length} 個角色）`)
                     .setDescription(sorted.map((c) => describe(c, now)).join('\n\n'))
+                    .setFooter({text: periodFooter(now)})
                     .setColor(0x5865F2)],
                 components: buttonRows(sorted.filter((c) => now >= readyAt(c))),
             });
@@ -364,6 +474,7 @@ const MoonClubCommand = {
                 embeds: [new EmbedBuilder()
                     .setTitle(`🌙 你的月亮俱樂部進度（${list.length} 個角色）`)
                     .setDescription(sorted.map((c) => describe(c, now)).join('\n\n'))
+                    .setFooter({text: periodFooter(now)})
                     .setColor(0x5865F2)],
                 components: buttonRows(sorted.filter((c) => now >= readyAt(c))),
                 ephemeral: true,
@@ -397,7 +508,7 @@ const MoonClubCommand = {
             await save();
 
             const done = c.day >= TOTAL_DAYS;
-            return interaction.reply({
+            await interaction.reply({
                 content: done
                     ? `🎉 **${c.name}** 第 ${TOTAL_DAYS} 天，任務完成！\n`
                         + '記得拿流行手冊四冊找珍妮換 LV1 優奈跟「遊手好閒的人」稱號。\n'
@@ -405,6 +516,10 @@ const MoonClubCommand = {
                     : `🌙 記錄好了\n\n${describe(c)}`,
                 ephemeral: true,
             });
+
+            // 先回本人再廣播 —— 互動三秒內要有回應，報到訊息慢一點沒關係
+            await announceCheckIn(interaction.client, c);
+            return;
         }
     },
 
@@ -457,6 +572,14 @@ async function panel(interaction) {
                 `時間到會在這個頻道 @ 你，按 [已對話] 重新計時。`,
                 `逾時會每天再催一次，最多 ${MAX_REMINDERS} 次就停。`,
                 '',
+                '**四位公關各有一個時段不出現**（遊戲一天＝現實 2 小時）',
+                ...PERIODS.map((p) => `${p.emoji} **${p.name}**　${periodClock(p)}　→ ${npcsAt(p.name).join('、')}`),
+                '',
+                '所以一個時段永遠只解得掉三個，第四個要等下一段。',
+                '黃昏跟清晨各只有 **15 分鐘**，最省事的解法是趁白天／晚上先解三個，',
+                '卡在 **:47** 換段時補最後那一位 —— 這樣每天只花五六分鐘。',
+                '（換段前後遊戲端會有一兩分鐘誤差，以遊戲內顯示為準）',
+                '',
                 '也可以用指令：`/月亮 登記`、`/月亮 查詢`、`/月亮 修改`、`/月亮 取消`',
             ].join('\n'))
             .setColor(0x5865F2)],
@@ -497,7 +620,10 @@ async function tick(client) {
             await channel.send({
                 content: `<@${userId}> 🌙 月亮俱樂部該去對話了`,
                 embeds: [new EmbedBuilder()
-                    .setDescription(chars.map((c) => describe(c, now)).join('\n\n'))
+                    .setDescription([
+                        chars.map((c) => describe(c, now)).join('\n\n'),
+                        periodHint(now),
+                    ].join('\n\n'))
                     .setFooter({text: '解完按下方按鈕重新計時'})
                     .setColor(0xFEE75C)],
                 components: buttonRows(chars),
